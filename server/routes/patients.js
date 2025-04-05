@@ -62,43 +62,41 @@ router.post('/patients', async (req, res) => {
   // Update patient
   router.put('/patients/:id', async (req, res) => {
     try {
-      // Validate the ID parameter
-      if (!req.params.id || req.params.id === 'undefined') {
+      const patientId = req.params.id;
+  
+      if (!patientId) {
         return res.status(400).json({ message: 'Invalid patient ID' });
       }
   
-      // Log the incoming request for debugging
-      console.log(`Update request for patient ID: ${req.params.id}`);
+      console.log(`Update request for patient ID: ${patientId}`);
       console.log('Request body:', req.body);
   
-      // Check if updating to an existing patient ID
       if (req.body.patientId) {
-        const existingPatient = await Patient.findOne({ 
+        const existing = await Patient.findOne({
           patientId: req.body.patientId,
-          _id: { $ne: req.params.id }
+          _id: { $ne: req.body._id } // This might still be sus, double check
         });
-        
-        if (existingPatient) {
+  
+        if (existing) {
           return res.status(400).json({ message: 'Patient ID already exists' });
         }
       }
-      
-      const updatedPatient = await Patient.findByIdAndUpdate(
-        req.params.id,
+  
+      const updated = await Patient.findOneAndUpdate(
+        { patientId },
         req.body,
         { new: true, runValidators: true }
       );
-      
-      if (!updatedPatient) {
+  
+      if (!updated) {
         return res.status(404).json({ message: 'Patient not found' });
       }
-      
-      console.log('Patient updated successfully:', updatedPatient);
-      res.json(updatedPatient);
+  
+      res.json(updated);
     } catch (err) {
       console.error('Error updating patient:', err);
       res.status(500).json({ message: 'Server error', error: err.message });
     }
   });
-    
+      
   module.exports = router;

@@ -3,10 +3,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient'); // Assuming you have a Patient model
+const Caretaker = require('../models/Caretaker');
 
 exports.register = async (req, res) => {
   try {
-    const { username, email, password, fullName, age, phone, address, role } = req.body;
+    const { fullName,username, email, password, phone, role, patientId, doctorId, hospital, specialization, relationship, emergencyContact } = req.body;
     console.log(req.body);
 
     if (!username || !email || !password || !role) {
@@ -23,13 +24,65 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       fullName,
-      age,
       phone,
-      address,
       role
     });
 
     await newUser.save();
+
+    // Generate a unique ID for doctor or patient
+    const generatedId = `ID-${Date.now().toString().slice(-6)}`;
+
+    // Create Doctor
+    if (role === 'doctor') {
+      const newDoctor = new Doctor({
+        doctorId: doctorId,
+        name: username,
+        email,
+        phone,
+        specialization: specialization || '',
+        licenseNumber: req.body.licenseNumber || '',
+        yearsOfExperience: req.body.yearsOfExperience || 0,
+        bio: req.body.bio || ''
+      });
+      await newDoctor.save();
+    }
+
+    // Create Patient
+    if (role === 'patient') {
+      const newPatient = new Patient({
+        patientId: patientId ,
+        doctorId: req.body.doctorId || '',
+        name: username,
+        email,
+        phone,
+        dateOfBirth: req.body.dateOfBirth || '',
+        gender: req.body.gender || '',
+        medicalHistory: req.body.medicalHistory || '',
+        bmi: req.body.bmi || 0,
+        petAllergy: req.body.petAllergy || false,
+        familyHistoryAsthma: req.body.familyHistoryAsthma || false,
+        historyOfAllergies: req.body.historyOfAllergies || false,
+        hayfever: req.body.hayfever || false,
+        gastroesophagealReflux: req.body.gastroesophagealReflux || false,
+        lungFunctionFEV1: req.body.lungFunctionFEV1 || 0,
+        lungFunctionFVC: req.body.lungFunctionFVC || 0,
+        exerciseInduced: req.body.exerciseInduced || false,
+        caretakerId: req.body.caretakerId || null
+      });
+      await newPatient.save();
+    }
+
+    // Create Caretaker
+    if (role === 'caretaker') {
+      const newCaretaker = new Caretaker({
+        name:username,
+        email,
+        phone,
+        patients: [] // start with an empty list
+      });
+      await newCaretaker.save();
+    }
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -40,9 +93,7 @@ exports.register = async (req, res) => {
         username,
         email,
         fullName,
-        age,
         phone,
-        address,
         role
       }
     });
@@ -66,7 +117,8 @@ exports.login = async (req, res) => {
       // Initialize doctorId and patientId
       let doctorId = null;
       let patientId = null;
-  
+      let caretakerId = null;
+
       // Check if the user is a doctor and fetch doctorId if applicable
       if (user.role === 'doctor') {
         const doctor = await Doctor.findOne({ email: user.email });
@@ -79,9 +131,16 @@ exports.login = async (req, res) => {
       if (user.role === 'patient') {
         const patient = await Patient.findOne({ email: user.email });
         if (patient) {
-          patientId = patient.patientId;
+          patientId = patient.patientId; // ✅ Assign correct value
         }
       }
+      if (user.role === 'caretaker') {
+        const patient = await Caretaker.findOne({ email: user.email });
+        if (patient) {
+          caretakerId= patient._id;
+        }
+      }
+  
   
       // Generate a JWT token
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -94,12 +153,11 @@ exports.login = async (req, res) => {
           username: user.username,
           email: user.email,
           fullName: user.fullName,
-          age: user.age,
           phone: user.phone,
-          address: user.address,
           role: user.role,
           doctorId: doctorId, // Include doctorId if the user is a doctor
-          patientId: patientId // Include patientId if the user is a patient
+          patientId: patientId,
+          caretakerId:caretakerId// Include patientId if the user is a patient
         }
       });
     } catch (err) {

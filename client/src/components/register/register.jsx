@@ -12,6 +12,7 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState("");
   const navigate = useNavigate();
+  const [doctorId, setDoctorId] = useState("");
 
   // Doctor specific states
   const [hospital, setHospital] = useState("");
@@ -33,20 +34,24 @@ const Register = () => {
     }
   
     const userData = {
-        username: name, // ✅ Fix: backend expects 'username', not 'name'
-        email,
+      username: name,
+      fullName: name, // ✅ Add this line
+      email,
       password,
       phone,
       role: userType,
     };
-  
+    
     if (userType === "doctor") {
+      userData.doctorId = doctorId;
       userData.hospital = hospital;
       userData.specialization = specialization;
-    } else if (userType === "caretaker") {
-      userData.patientId = patientId;
+    }
+         else if (userType === "caretaker") {
       userData.relationship = relationship;
     } else if (userType === "patient") {
+      userData.patientId = patientId; // ✅ Add this
+
       userData.emergencyContact = emergencyContact;
     }
     
@@ -167,7 +172,6 @@ const Register = () => {
               </select>
             </div>
             
-            {/* Doctor specific fields */}
             {userType === "doctor" && (
               <>
                 <div className="space-y-2">
@@ -199,6 +203,20 @@ const Register = () => {
                     <option value="Internal Medicine">Internal Medicine</option>
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label htmlFor="doctorId" className="block text-sm font-medium text-gray-700">Doctor ID</label>
+                  <input
+                    id="doctorId"
+                    type="text"
+                    placeholder="D001"
+                    value={doctorId}
+                    onChange={(e) => setDoctorId(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">Unique identifier provided by the admin</p>
+                </div>
+
               </>
             )}
 
@@ -241,20 +259,34 @@ const Register = () => {
 
             {/* Patient specific fields */}
             {userType === "patient" && (
-              <div className="space-y-2">
-                <label htmlFor="emergencyContact" className="block text-sm font-medium text-gray-700">Emergency Contact (optional)</label>
-                <input
-                  id="emergencyContact"
-                  type="tel"
-                  placeholder="555-123-4567"
-                  value={emergencyContact}
-                  onChange={(e) => setEmergencyContact(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="text-xs text-gray-500">You can add this later if needed</p>
-              </div>
-            )}
-            
+  <>
+    <div className="space-y-2">
+      <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">Patient ID</label>
+      <input
+        id="patientId"
+        type="text"
+        placeholder="P001"
+        value={patientId}
+        onChange={(e) => setPatientId(e.target.value)}
+        required
+        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
+    <div className="space-y-2">
+      <label htmlFor="emergencyContact" className="block text-sm font-medium text-gray-700">Emergency Contact (optional)</label>
+      <input
+        id="emergencyContact"
+        type="tel"
+        placeholder="555-123-4567"
+        value={emergencyContact}
+        onChange={(e) => setEmergencyContact(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+      />
+      <p className="text-xs text-gray-500">You can add this later if needed</p>
+    </div>
+  </>
+)}
+
             <button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors"

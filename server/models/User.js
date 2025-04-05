@@ -5,10 +5,15 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   fullName: String,
-  age: Number,
-  phone: String,
-  address: String,
-  role: { type: String, enum: ['doctor', 'patient', 'caretaker', 'admin'], required: true } // ✅ Added role
+  age: {
+    type: Number,
+    default: 0 // or null if you prefer
+  },  phone: String,
+  address: {
+    type: String,
+    default: ""
+  },
+    role: { type: String, enum: ['doctor', 'patient', 'caretaker', 'admin'], required: true } // ✅ Added role
 });
 
 module.exports = mongoose.model('User', userSchema);

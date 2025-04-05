@@ -30,7 +30,6 @@ app.use('/api',patientRoute)
 app.use('/api',symptomRoute)
 app.use('/api',caretakerRoute)
 app.use('/api',adminRoute)
-app.use('/api',videocallRoute)
 app.use('/api/caretaker',caretakerRoute)
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
