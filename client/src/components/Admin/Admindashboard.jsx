@@ -10,24 +10,24 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [patientsRes, doctorsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/admin/patients'),
-          axios.get('http://localhost:5000/api/admin/doctors')
-        ]);
-        
-        setPatients(patientsRes.data);
-        setDoctors(doctorsRes.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const [patientsRes, doctorsRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/admin/patients'),
+        axios.get('http://localhost:5000/api/admin/doctors')
+      ]);
+      
+      setPatients(patientsRes.data);
+      setDoctors(doctorsRes.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setLoading(false);
+    }
+  };
 
   const handlePatientClick = (patientId) => {
     navigate(`/admin-patient/${patientId}`);
@@ -35,6 +35,40 @@ const Dashboard = () => {
 
   const handleDoctorClick = (doctorId) => {
     navigate(`/admin-doctor/${doctorId}`);
+  };
+
+  const handleEditPatient = (e, patientId) => {
+    e.stopPropagation(); // Prevent row click event
+    navigate(`/edit-patient/${patientId}`);
+  };
+
+  const handleEditDoctor = (e, doctorId) => {
+    e.stopPropagation(); // Prevent row click event
+    navigate(`/edit-doctor/${doctorId}`);
+  };
+
+  const handleDeletePatient = async (e, patientId) => {
+    e.stopPropagation(); // Prevent row click event
+    if (window.confirm('Are you sure you want to delete this patient?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/patients/${patientId}`);
+        setPatients(patients.filter(patient => patient.patientId !== patientId));
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+      }
+    }
+  };
+
+  const handleDeleteDoctor = async (e, doctorId) => {
+    e.stopPropagation(); // Prevent row click event
+    if (window.confirm('Are you sure you want to delete this doctor?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/doctors/${doctorId}`);
+        setDoctors(doctors.filter(doctor => doctor.doctorId !== doctorId));
+      } catch (error) {
+        console.error('Error deleting doctor:', error);
+      }
+    }
   };
 
   if (loading) {
@@ -146,6 +180,7 @@ const Dashboard = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age/DOB</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -160,6 +195,20 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.gender || 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.dateOfBirth || (patient.age ? `${patient.age} yrs` : 'N/A')}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.phone}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button 
+                              className="text-blue-600 hover:text-blue-800 mr-3"
+                              onClick={(e) => handleEditPatient(e, patient.patientId)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="text-red-600 hover:text-red-800"
+                              onClick={(e) => handleDeletePatient(e, patient.patientId)}
+                            >
+                              Delete
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -205,7 +254,18 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doctor.name}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.specialization || 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button className="text-blue-600 hover:text-blue-800 mr-3">View</button>
+                            <button 
+                              className="text-blue-600 hover:text-blue-800 mr-3"
+                              onClick={(e) => handleEditDoctor(e, doctor.doctorId)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="text-red-600 hover:text-red-800 mr-3"
+                              onClick={(e) => handleDeleteDoctor(e, doctor.doctorId)}
+                            >
+                              Delete
+                            </button>
                             <button className="text-green-600 hover:text-green-800">Schedule</button>
                           </td>
                         </tr>

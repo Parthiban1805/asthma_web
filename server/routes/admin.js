@@ -159,5 +159,40 @@ router.post('/admin/prescriptions', async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+router.delete('/admin/patients/:patientId', async (req, res) => {
+  try {
+    console.log(req.params.patientId )
+    const patient = await Patient.findOne({ patientId: req.params.patientId });
+    
+    if (!patient) {
+      return res.status(404).json({ msg: 'Patient not found' });
+    }
+    
+    await Patient.findOneAndDelete({ patientId: req.params.patientId });
+    
+    res.json({ msg: 'Patient removed' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Delete doctor
+router.delete('/admin/doctors/:doctorId',  async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ doctorId: req.params.doctorId });
+    
+    if (!doctor) {
+      return res.status(404).json({ msg: 'Doctor not found' });
+    }
+    
+    await Doctor.findOneAndDelete({ doctorId: req.params.doctorId });
+    
+    res.json({ msg: 'Doctor removed' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;

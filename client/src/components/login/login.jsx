@@ -33,7 +33,10 @@ const Login = () => {
         navigate("/patient-dashboard");
       } else if (user.role === "caretaker") {
         navigate("/caretaker-dashboard");
-      } else {
+      }
+      else if (user.role === "admin") {
+        navigate("/admin-dashboard");}
+         else {
         navigate("/"); // Default route if the role is unknown
       }
 

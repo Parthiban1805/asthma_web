@@ -2,12 +2,13 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Doctor = require('../models/Doctor');
-const Patient = require('../models/Patient'); // Assuming you have a Patient model
+const Patient = require('../models/Patient');
 const Caretaker = require('../models/Caretaker');
+const Admin = require('../models/admin'); // Import the Admin model
 
 exports.register = async (req, res) => {
   try {
-    const { fullName,username, email, password, phone, role, patientId, doctorId, hospital, specialization, relationship, emergencyContact } = req.body;
+    const { fullName, username, email, password, phone, role, department, permissions } = req.body;
     console.log(req.body);
 
     if (!username || !email || !password || !role) {
@@ -26,33 +27,27 @@ exports.register = async (req, res) => {
       fullName,
       phone,
       role,
-      patientId
     });
 
     await newUser.save();
 
-    // Generate a unique ID for doctor or patient
-    const generatedId = `ID-${Date.now().toString().slice(-6)}`;
-
-    // Create Doctor
+    // Create role-specific records based on role
     if (role === 'doctor') {
       const newDoctor = new Doctor({
-        doctorId: doctorId,
+        doctorId: req.body.doctorId || `DOC-${Date.now().toString().slice(-6)}`,
         name: username,
         email,
         phone,
-        specialization: specialization || '',
+        specialization: req.body.specialization || '',
         licenseNumber: req.body.licenseNumber || '',
         yearsOfExperience: req.body.yearsOfExperience || 0,
         bio: req.body.bio || ''
       });
       await newDoctor.save();
-    }
-
-    // Create Patient
-    if (role === 'patient') {
+    } 
+    else if (role === 'patient') {
       const newPatient = new Patient({
-        patientId: patientId ,
+        patientId: req.body.patientId || `PAT-${Date.now().toString().slice(-6)}`,
         doctorId: req.body.doctorId || '',
         name: username,
         email,
@@ -72,17 +67,27 @@ exports.register = async (req, res) => {
         caretakerId: req.body.caretakerId || null
       });
       await newPatient.save();
-    }
-
-    // Create Caretaker
-    if (role === 'caretaker') {
+    } 
+    else if (role === 'caretaker') {
       const newCaretaker = new Caretaker({
-        name:username,
+        name: username,
         email,
         phone,
-        patients: [] // start with an empty list
+        patients: req.body.patientId ? [req.body.patientId] : []
       });
       await newCaretaker.save();
+    }
+    else if (role === 'admin') {
+      // Create Admin record
+      const newAdmin = new Admin({
+        adminId: req.body.adminId || `ADMIN-${Date.now().toString().slice(-6)}`,
+        name: username,
+        email,
+        phone,
+        department: department || 'General Administration',
+        permissions: permissions || ['view_users', 'edit_users', 'view_data']
+      });
+      await newAdmin.save();
     }
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -104,65 +109,73 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-  console.log(req.body)
-      // Find the user by email
-      const user = await User.findOne({ email });
-      if (!user) return res.status(400).json({ message: 'User not found' });
-  
-      // Check if the password matches
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-  
-      // Initialize doctorId and patientId
-      let doctorId = null;
-      let patientId = null;
-      let caretakerId = null;
+  try {
+    const { email, password } = req.body;
+    console.log(req.body);
 
-      // Check if the user is a doctor and fetch doctorId if applicable
-      if (user.role === 'doctor') {
-        const doctor = await Doctor.findOne({ email: user.email });
-        if (doctor) {
-          doctorId = doctor.doctorId;
-        }
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'User not found' });
+
+    // Check if the password matches
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    // Initialize role-specific IDs
+    let doctorId = null;
+    let patientId = null;
+    let caretakerId = null;
+    let adminId = null;
+
+    // Fetch role-specific data based on user role
+    if (user.role === 'doctor') {
+      const doctor = await Doctor.findOne({ email: user.email });
+      if (doctor) {
+        doctorId = doctor.doctorId;
       }
-  
-      // Check if the user is a patient and fetch patientId if applicable
-      if (user.role === 'patient') {
-        const patient = await Patient.findOne({ email: user.email });
-        if (patient) {
-          patientId = patient.patientId; // ✅ Assign correct value
-        }
-      }
-      if (user.role === 'caretaker') {
-        const patient = await Caretaker.findOne({ email: user.email });
-        if (patient) {
-          caretakerId= patient._id;
-        }
-      }
-  
-  
-      // Generate a JWT token
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  
-      // Send the response with user details and role-specific ID
-      res.json({
-        token,
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          fullName: user.fullName,
-          phone: user.phone,
-          role: user.role,
-          doctorId: doctorId, // Include doctorId if the user is a doctor
-          patientId: patientId,
-          caretakerId:caretakerId// Include patientId if the user is a patient
-        }
-      });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
     }
-  };
-  
+    else if (user.role === 'patient') {
+      const patient = await Patient.findOne({ email: user.email });
+      if (patient) {
+        patientId = patient.patientId;
+      }
+    }
+    else if (user.role === 'caretaker') {
+      const caretaker = await Caretaker.findOne({ email: user.email });
+      if (caretaker) {
+        caretakerId = caretaker._id;
+      }
+    }
+    else if (user.role === 'admin') {
+      const admin = await Admin.findOne({ email: user.email });
+      if (admin) {
+        adminId = admin.adminId;
+        // Update last active timestamp
+        admin.lastActive = Date.now();
+        await admin.save();
+      }
+    }
+
+    // Generate a JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Send the response with user details and role-specific ID
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        role: user.role,
+        doctorId: doctorId,
+        patientId: patientId,
+        caretakerId: caretakerId,
+        adminId: adminId
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

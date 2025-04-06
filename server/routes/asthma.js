@@ -51,7 +51,7 @@ router.post('/predict-asthma', async (req, res) => {
     ];
 
     // 4. Call Python script
-    const python = spawn('python', ['predict_model.py', JSON.stringify(inputData)]);
+    const python = spawn('python', ['predict_model.py', JSON.stringify(patientData)]);
 
     let result = '';
     python.stdout.on('data', (data) => {

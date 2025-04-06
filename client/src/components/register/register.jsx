@@ -12,9 +12,9 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState("");
   const navigate = useNavigate();
-  const [doctorId, setDoctorId] = useState("");
-
+  
   // Doctor specific states
+  const [doctorId, setDoctorId] = useState("");
   const [hospital, setHospital] = useState("");
   const [specialization, setSpecialization] = useState("");
   
@@ -24,6 +24,10 @@ const Register = () => {
   
   // Patient specific states
   const [emergencyContact, setEmergencyContact] = useState("");
+  
+  // Admin specific states
+  const [adminId, setAdminId] = useState("");
+  const [department, setDepartment] = useState("General Administration");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,40 +39,43 @@ const Register = () => {
   
     const userData = {
       username: name,
-      fullName: name, // ✅ Add this line
+      fullName: name,
       email,
       password,
       phone,
       role: userType,
     };
     
+    // Add role-specific fields based on selected role
     if (userType === "doctor") {
       userData.doctorId = doctorId;
       userData.hospital = hospital;
       userData.specialization = specialization;
     }
-         else if (userType === "caretaker") {
+    else if (userType === "caretaker") {
+      if (patientId) {
+        userData.patientId = patientId;
+      }
       userData.relationship = relationship;
-    } else if (userType === "patient") {
-      userData.patientId = patientId; // ✅ Add this
-
+    }
+    else if (userType === "patient") {
+      userData.patientId = patientId;
       userData.emergencyContact = emergencyContact;
     }
-    
+    else if (userType === "admin") {
+      userData.adminId = adminId;
+      userData.department = department;
+    }
   
     try {
       const response = await axios.post("http://localhost:5000/api/auth/register", userData);
-  
       console.log("Registration successful:", response.data);
-  
-      // Navigate to login or dashboard
       navigate("/login");
     } catch (err) {
       console.error("Registration failed:", err.response?.data?.message || err.message);
       alert("Registration failed: " + (err.response?.data?.message || "Server error"));
     }
   };
-  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-50 to-teal-100">
@@ -172,6 +179,7 @@ const Register = () => {
               </select>
             </div>
             
+            {/* Doctor specific fields */}
             {userType === "doctor" && (
               <>
                 <div className="space-y-2">
@@ -204,19 +212,17 @@ const Register = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="doctorId" className="block text-sm font-medium text-gray-700">Doctor ID</label>
+                  <label htmlFor="doctorId" className="block text-sm font-medium text-gray-700">Doctor ID (optional)</label>
                   <input
                     id="doctorId"
                     type="text"
                     placeholder="D001"
                     value={doctorId}
                     onChange={(e) => setDoctorId(e.target.value)}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <p className="text-xs text-gray-500">Unique identifier provided by the admin</p>
+                  <p className="text-xs text-gray-500">A unique ID will be generated if not provided</p>
                 </div>
-
               </>
             )}
 
@@ -224,14 +230,13 @@ const Register = () => {
             {userType === "caretaker" && (
               <>
                 <div className="space-y-2">
-                  <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">Patient ID</label>
+                  <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">Patient ID (optional)</label>
                   <input
                     id="patientId"
                     type="text"
                     placeholder="P001"
                     value={patientId}
                     onChange={(e) => setPatientId(e.target.value)}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                   <p className="text-xs text-gray-500">Enter the ID of the patient you are caring for</p>
@@ -259,33 +264,66 @@ const Register = () => {
 
             {/* Patient specific fields */}
             {userType === "patient" && (
-  <>
-    <div className="space-y-2">
-      <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">Patient ID</label>
-      <input
-        id="patientId"
-        type="text"
-        placeholder="P001"
-        value={patientId}
-        onChange={(e) => setPatientId(e.target.value)}
-        required
-        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-    <div className="space-y-2">
-      <label htmlFor="emergencyContact" className="block text-sm font-medium text-gray-700">Emergency Contact (optional)</label>
-      <input
-        id="emergencyContact"
-        type="tel"
-        placeholder="555-123-4567"
-        value={emergencyContact}
-        onChange={(e) => setEmergencyContact(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-      />
-      <p className="text-xs text-gray-500">You can add this later if needed</p>
-    </div>
-  </>
-)}
+              <>
+                <div className="space-y-2">
+                  <label htmlFor="patientId" className="block text-sm font-medium text-gray-700">Patient ID (optional)</label>
+                  <input
+                    id="patientId"
+                    type="text"
+                    placeholder="P001"
+                    value={patientId}
+                    onChange={(e) => setPatientId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">A unique ID will be generated if not provided</p>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="emergencyContact" className="block text-sm font-medium text-gray-700">Emergency Contact (optional)</label>
+                  <input
+                    id="emergencyContact"
+                    type="tel"
+                    placeholder="555-123-4567"
+                    value={emergencyContact}
+                    onChange={(e) => setEmergencyContact(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Admin specific fields */}
+            {userType === "admin" && (
+              <>
+                <div className="space-y-2">
+                  <label htmlFor="adminId" className="block text-sm font-medium text-gray-700">Admin ID (optional)</label>
+                  <input
+                    id="adminId"
+                    type="text"
+                    placeholder="ADMIN001"
+                    value={adminId}
+                    onChange={(e) => setAdminId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">A unique ID will be generated if not provided</p>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
+                  <select
+                    id="department"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="General Administration">General Administration</option>
+                    <option value="IT Support">IT Support</option>
+                    <option value="Medical Operations">Medical Operations</option>
+                    <option value="User Management">User Management</option>
+                    <option value="Data Analysis">Data Analysis</option>
+                    <option value="System Administration">System Administration</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <button 
               type="submit" 
