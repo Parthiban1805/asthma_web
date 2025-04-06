@@ -9,30 +9,13 @@ const symptomSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  coughing: {
-    type: Boolean,
-    default: false
-  },
-  chestTightness: {
-    type: Boolean,
-    default: false
-  },
-  shortnessOfBreath: {
-    type: Boolean,
-    default: false
-  },
-  wheezing: {
-    type: Boolean,
-    default: false
-  },
-  nighttimeSymptoms: {
-    type: Boolean,
-    default: false
-  },
-  exercise: {
-    type: Boolean,
-    default: false
-  },
+  coughing: { type: Number, default: 0 },
+  chestTightness: { type: Number, default: 0 },
+  shortnessOfBreath: { type: Number, default: 0 },
+  wheezing: { type: Number, default: 0 },
+  nighttimeSymptoms: { type: Number, default: 0 },
+  exercise: { type: Number, default: 0 }, // if yes, considered with exerciseInduced
+
   notes: {
     type: String
   },

@@ -29,7 +29,7 @@ router.post('/symptoms', async (req, res) => {
       exercise, 
       notes 
     } = req.body;
-    
+    console.log(req.body)
     // Calculate severity based on number of symptoms
     const symptomCount = [coughing, chestTightness, shortnessOfBreath, wheezing, nighttimeSymptoms].filter(Boolean).length;
     let severity = 'Mild';
@@ -41,7 +41,8 @@ router.post('/symptoms', async (req, res) => {
     }
     
     const newSymptom = new Symptom({
-      patientId,
+      patientId, // <-- add this line
+
       coughing,
       chestTightness,
       shortnessOfBreath,
@@ -56,9 +57,9 @@ router.post('/symptoms', async (req, res) => {
     
     // Check if this is exercise-induced and there's a history
     if (exercise) {
-      const patient = await Patient.findById(patientId);
+      const patient = await Patient.find({patientId:patientId});
       if (patient && patient.exerciseInduced) {
-        // Could trigger notification to doctor here
+        // Could trigger notification to do0ctor here
         console.log('Exercise-induced symptoms detected for patient with history');
       }
     }

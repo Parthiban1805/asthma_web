@@ -12,17 +12,35 @@ const patientSchema = new mongoose.Schema({
   address: String,
   medicalHistory: String,
   bmi: Number,
-  petAllergy: Boolean,
-  familyHistoryAsthma: Boolean,
-  historyOfAllergies: Boolean,
-  hayfever: Boolean,
-  gastroesophagealReflux: Boolean,
+
+  // Doctor-side inputs (converted from Boolean to Number)
+  petAllergy: { type: Number, default: 0 },
+  familyHistoryAsthma: { type: Number, default: 0 },
+  historyOfAllergies: { type: Number, default: 0 },
+  hayfever: { type: Number, default: 0 },
+  gastroesophagealReflux: { type: Number, default: 0 },
   lungFunctionFEV1: Number,
   lungFunctionFVC: Number,
-  exerciseInduced: Boolean,
+  exerciseInduced: { type: Number, default: 0 },
 
-  caretakerId: { 
-    type: mongoose.Schema.Types.ObjectId, 
+  // Patient-side inputs: Symptoms
+  coughing: { type: Number, default: 0 },
+  chestTightness: { type: Number, default: 0 },
+  shortnessOfBreath: { type: Number, default: 0 },
+  wheezing: { type: Number, default: 0 },
+  nighttimeSymptoms: { type: Number, default: 0 },
+  exercise: { type: Number, default: 0 }, // if yes, considered with exerciseInduced
+
+  // Patient-side inputs: Triggers
+  smoking: { type: Number, default: 0 },
+  pollutionExposure: { type: Number, default: 0 },
+  pollenExposure: { type: Number, default: 0 },
+  dustExposure: { type: Number, default: 0 },
+  physicalActivity: { type: Number, default: 0 }, // scale 0–10
+  petExposure: { type: Number, default: 0 },
+
+  caretakerId: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Caretaker',
     default: null // Null means unassigned
   },

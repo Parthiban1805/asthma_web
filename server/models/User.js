@@ -13,7 +13,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-    role: { type: String, enum: ['doctor', 'patient', 'caretaker', 'admin'], required: true } // ✅ Added role
+    role: { type: String, enum: ['doctor', 'patient', 'caretaker', 'admin'], required: true },
+    patientId: { type: String, required: true, unique: true },
+    // ✅ Added role
 });
 
 module.exports = mongoose.model('User', userSchema);

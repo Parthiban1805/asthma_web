@@ -41,23 +41,58 @@ router.get('/patients/:id', async (req, res) => {
     }
   });
   
-  // Create new patient
-router.post('/patients', async (req, res) => {
+  router.get('/patients/byPatientId/:patientId', async (req, res) => {
     try {
-      // Check if patient ID already exists
+      const patient = await Patient.findOne({ patientId: req.params.patientId });
+      
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      
+      res.json(patient);
+    } catch (error) {
+      console.error('Error fetching patient by patientId:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  router.put('/patients/byPatientId/:patientId', async (req, res) => {
+    try {
+      const updatedPatient = await Patient.findOneAndUpdate(
+        { patientId: req.params.patientId },
+        req.body,
+        { new: true }
+      );
+      
+      if (!updatedPatient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      
+      res.json(updatedPatient);
+    } catch (error) {
+      console.error('Error updating patient by patientId:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+    const User = require('../models/User'); // Import User model (assuming it's where patientId is stored)
+
+  router.post('/patients', async (req, res) => {
+    try {
       const existingPatient = await Patient.findOne({ patientId: req.body.patientId });
+    
       if (existingPatient) {
         return res.status(400).json({ message: 'Patient ID already exists' });
       }
       
       const newPatient = new Patient(req.body);
-      const savedPatient = await newPatient.save();
-      res.status(201).json(savedPatient);
-    } catch (err) {
-      console.error('Error creating patient:', err);
+      await newPatient.save();
+      
+      res.status(201).json(newPatient);
+    } catch (error) {
+      console.error('Error creating patient:', error);
       res.status(500).json({ message: 'Server error' });
-    }
-  });
+}
+    });
+  
   
   // Update patient
   router.put('/patients/:id', async (req, res) => {
@@ -96,6 +131,24 @@ router.post('/patients', async (req, res) => {
     } catch (err) {
       console.error('Error updating patient:', err);
       res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  });
+  router.put('/doctor/patients/:id', async (req, res) => {
+    try {
+      const updatedPatient = await Patient.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+      
+      if (!updatedPatient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      
+      res.json(updatedPatient);
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      res.status(500).json({ message: 'Server error' });
     }
   });
       

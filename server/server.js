@@ -14,6 +14,9 @@ const app = express();
 const adminRoute=require('./routes/admin')
 const videocallRoute=require('./routes/agora')
 const caretakerRoute=require('./routes/caretaker')
+const asthmaRoute=require('./routes/asthma')
+const sendAppointmentReminders = require('./services/sendAppointmentReminders');
+
 dotenv.config();
 
 // Middleware
@@ -31,11 +34,15 @@ app.use('/api',symptomRoute)
 app.use('/api',caretakerRoute)
 app.use('/api',adminRoute)
 app.use('/api/caretaker',caretakerRoute)
+app.use('/api',asthmaRoute)
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
   console.log('MongoDB connected');
+  sendAppointmentReminders().then(() => {
+    console.log('Reminders sent');
+  });
   app.listen(5000, () => console.log('Server running on port 5000'));
 }).catch(err => console.error(err));

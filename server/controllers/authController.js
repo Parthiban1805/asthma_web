@@ -25,7 +25,8 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       fullName,
       phone,
-      role
+      role,
+      patientId
     });
 
     await newUser.save();
