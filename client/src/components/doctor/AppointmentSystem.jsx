@@ -222,7 +222,7 @@ const AppointmentSystem = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {appointments.map((appointment) => (
-                            <tr key={appointment.id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <tr key={appointment._id} className="hover:bg-gray-50 transition-colors duration-150">
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-900">{getAppointmentTime(appointment.dateTime)}</div>
                                 <div className="text-xs text-gray-500">{appointment.duration} mins</div>
@@ -258,7 +258,7 @@ const AppointmentSystem = () => {
                                   </span>
                                 </button>
                                 <button 
-                                  onClick={() => handleCancelAppointment(appointment.id)}
+                                  onClick={() => handleCancelAppointment(appointment._id)}
                                   className="text-red-600 hover:text-red-900 transition-colors duration-150 disabled:opacity-50"
                                   disabled={appointment.status === 'Cancelled'}
                                 >

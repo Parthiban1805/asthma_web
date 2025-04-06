@@ -35,13 +35,14 @@ const Dashboard = ({ doctor: initialDoctor }) => {
   const [stats, setStats] = useState(dummyStats);
   const [recentAppointments, setRecentAppointments] = useState(dummyAppointments);
   const [loading, setLoading] = useState(true);
+  const [user,setUser]=useState("")
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         // Retrieve the user object from localStorage
         const user = JSON.parse(localStorage.getItem('user'));
-
+        setUser(user)
         // Check if the user exists and has a doctorId
         if (!user || user.role !== 'doctor') {
           throw new Error('User is not a doctor or no user found');
@@ -85,7 +86,7 @@ const Dashboard = ({ doctor: initialDoctor }) => {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Welcome, {doctor?.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-800">Welcome, {user.fullName}</h1>
               <p className="text-indigo-600 mt-1">Healthcare Dashboard</p>
             </div>
             <div className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-lg">

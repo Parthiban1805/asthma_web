@@ -15,6 +15,7 @@ const adminRoute=require('./routes/admin')
 const videocallRoute=require('./routes/agora')
 const caretakerRoute=require('./routes/caretaker')
 const asthmaRoute=require('./routes/asthma')
+const doctorRoute=require('./routes/doctor')
 const sendAppointmentReminders = require('./services/sendAppointmentReminders');
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use('/api',caretakerRoute)
 app.use('/api',adminRoute)
 app.use('/api/caretaker',caretakerRoute)
 app.use('/api',asthmaRoute)
+app.use('/api',doctorRoute)
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
