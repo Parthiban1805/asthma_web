@@ -31,6 +31,43 @@ router.get('/appointments/patient/:patientId', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch appointments' });
   }
 });
+
+router.post('/patient-appointments',  async (req, res) => {
+  try {
+    const { patientId, doctorId, dateTime, duration, purpose, notes } = req.body;
+    
+    // Validate required fields
+    if (!patientId || !doctorId || !dateTime || !purpose) {
+      return res.status(400).json({ message: 'Missing required appointment fields' });
+    }
+    
+    // Check if patient exists
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+    
+    // Create and save new appointment
+    const newAppointment = new Appointment({
+      patientId,
+      doctorId,
+      dateTime: new Date(dateTime),
+      duration: duration || 30, // Default to 30 minutes if not specified
+      purpose,
+      notes,
+      status: 'Pending' // Initial status is pending
+    });
+    
+    await newAppointment.save();
+    
+    res.status(201).json(newAppointment);
+  } catch (err) {
+    console.error('Error booking appointment:', err);
+    res.status(500).json({ message: 'Failed to book appointment', error: err.message });
+  }
+});
+
+
 router.get('/patient-appointments/:patientId', async (req, res) => {
   try {
     const { patientId } = req.params;

@@ -228,7 +228,7 @@ const PatientDashboard = () => {
           throw new Error("Patient ID not available");
         }
         
-        const response = await axios.post('http://localhost:5000/api/appointments', {
+        const response = await axios.post('http://localhost:5000/api/patient-appointments', {
           ...newAppointment,
           patientId: patientMongoId,
           doctorId: patient?.doctorId || null,
