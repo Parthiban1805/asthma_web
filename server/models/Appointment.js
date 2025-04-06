@@ -7,7 +7,9 @@ const appointmentSchema = new mongoose.Schema({
   duration: { type: Number, required: true },  // Duration in minutes
   purpose: { type: String, required: true },
   notes: { type: String },
-  status: { type: String, enum: ['Confirmed', 'Cancelled'], default: 'Confirmed' }
+  status: { type: String, enum: ['Confirmed', 'Cancelled'], default: 'Confirmed' },
+  reminderSent: { type: Boolean, default: false }, // 👈 Add this line
+
 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

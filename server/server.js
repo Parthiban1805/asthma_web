@@ -42,9 +42,22 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
-  console.log('MongoDB connected');
-  sendAppointmentReminders().then(() => {
-    console.log('Reminders sent');
+  console.log('✅ MongoDB connected');
+
+  // Start checking for reminders immediately
+  sendAppointmentReminders();
+
+  // Check for reminders every second
+  setInterval(() => {
+    console.log(`\n[${new Date().toLocaleTimeString()}] Checking for upcoming appointments...`);
+    sendAppointmentReminders();
+  }, 1000);
+
+  // Start server
+  app.listen(5000, () => {
+    console.log('🚀 Server running on port 5000');
   });
-  app.listen(5000, () => console.log('Server running on port 5000'));
-}).catch(err => console.error(err));
+
+}).catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+});
