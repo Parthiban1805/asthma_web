@@ -77,6 +77,34 @@ router.get('/admin/doctors/:id', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+router.get('/admin/caretakers',  async (req, res) => {
+  try {
+    const caretakers = await Caretaker.find()
+      .populate('patients', 'name patientId');
+    
+    res.json(caretakers);
+  } catch (error) {
+    console.error('Error fetching caretakers:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get caretaker by ID
+router.get('/admin/caretakers/:id', async (req, res) => {
+  try {
+    const caretaker = await Caretaker.findById(req.params.id)
+      .populate('patients', 'name patientId');
+    
+    if (!caretaker) {
+      return res.status(404).json({ error: 'Caretaker not found' });
+    }
+    
+    res.json(caretaker);
+  } catch (error) {
+    console.error('Error fetching caretaker:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Get all appointments
 router.get('/admin/appointments', async (req, res) => {
@@ -148,6 +176,50 @@ router.post('/admin/symptoms', async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+router.get('/admin/caretakers/:id', async (req, res) => {
+  try {
+    const caretaker = await Caretaker.findById(req.params.id);
+    
+    if (!caretaker) {
+      return res.status(404).json({ message: 'Caretaker not found' });
+    }
+    
+    // Get detailed patient information for each patient ID
+    let patientDetails = [];
+    
+    if (caretaker.patients && caretaker.patients.length > 0) {
+      // Find all patients that match the IDs in caretaker.patients
+      const patients = await Patient.find({
+        _id: { $in: caretaker.patients }
+      });
+      
+      // Map patients to the format we need
+      patientDetails = patients.map(patient => ({
+        _id: patient._id,
+        name: patient.name,
+        patientId: patient.patientId || patient._id
+      }));
+      
+      console.log(`Found ${patients.length} patient records for caretaker ${caretaker._id}`);
+    }
+    
+    // Create response object with caretaker data and patient details
+    const responseData = {
+      ...caretaker.toObject(),
+      patientDetails
+    };
+    
+    res.json(responseData);
+  } catch (error) {
+    console.error('Error fetching caretaker details:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+
+module.exports = router;
 
 // Create new prescription
 router.post('/admin/prescriptions', async (req, res) => {

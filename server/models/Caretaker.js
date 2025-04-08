@@ -8,10 +8,11 @@ const caretakerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Patient' 
   }],
+  
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 
-const Caretaker = mongoose.model('Caretaker', caretakerSchema);
+const Caretaker = mongoose.models.Caretaker || mongoose.model('Caretaker', caretakerSchema);
 
 module.exports = Caretaker;

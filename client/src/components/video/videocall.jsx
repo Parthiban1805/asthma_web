@@ -1,58 +1,49 @@
-// src/components/Patient/Patientvideocall.jsx
+// src/components/doctor/VideoCall.jsx
 import React, { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 
-const PatientVideoCall = () => {
-  // Grab the :roomID from the URL (e.g. /patient-video-call/room-123)
+const VideoCall = () => {
+  // Grab the roomID param (e.g. /video-call/room-ABC)
   const roomID = "logith";
 
-  // A ref for attaching the ZEGOCLOUD UI kit container
   const containerRef = useRef(null);
 
-  // Function that initializes and joins the ZEGOCLOUD call
   const setupZegoCall = async (element) => {
     // Replace these with your actual ZEGOCLOUD credentials
-    const appID = 510870875;            // example: 510870875
-    const serverSecret = 'ed84c79ea4e2bc3a7e532f7b365936dd'; // example
-    // Generate a unique userID for the local participant
-    const userID = String(Date.now());
-    // Possibly fetch the patient’s name from localStorage or state
-    const userName = 'PatientUser';
+    const appID = 510870875;  
+    const serverSecret = 'ed84c79ea4e2bc3a7e532f7b365936dd'; 
 
-    // Build a dev kit token (for testing only)
+    const userID = String(Date.now());
+    const userName = 'DoctorUser';
+
+    // Create token
     const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
       appID,
       serverSecret,
-      roomID || 'default-patient-room',
+      roomID || 'default-doctor-room',
       userID,
       userName
     );
 
-    // Create the UI kit instance with the token
     const zp = ZegoUIKitPrebuilt.create(kitToken);
 
-    // Join the call with scenario + config
     zp.joinRoom({
       container: element,
       sharedLinks: [
         {
           name: 'Copy Link',
-          url: `${window.location.origin}/patient-video-call/${roomID}`,
+          url: `${window.location.origin}/video-call/${roomID}`,
         },
       ],
       scenario: {
-        // e.g. group calls
         mode: ZegoUIKitPrebuilt.VideoConference,
-        // or 1-on-1 calls:
-        // mode: ZegoUIKitPrebuilt.OneONoneCall,
       },
       showScreenSharingButton: true,
     });
   };
 
   useEffect(() => {
-    // Once containerRef is attached, set up the call
     if (containerRef.current) {
       setupZegoCall(containerRef.current);
     }
@@ -67,4 +58,4 @@ const PatientVideoCall = () => {
   );
 };
 
-export default PatientVideoCall;
+export default VideoCall;

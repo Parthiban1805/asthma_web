@@ -37,6 +37,14 @@ app.use('/api',adminRoute)
 app.use('/api/caretaker',caretakerRoute)
 app.use('/api',asthmaRoute)
 app.use('/api',doctorRoute)
+const patientQueriesRoutes = require('./routes/patientQueries');
+const sosAlertRoutes = require('./routes/sosAlert');
+
+// Use the routes
+app.use('/api', patientQueriesRoutes);
+app.use('/api', sosAlertRoutes);
+
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

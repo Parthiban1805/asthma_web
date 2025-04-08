@@ -48,10 +48,41 @@ router.post('/predict-asthma', async (req, res) => {
       symptom.coughing,
       symptom.nighttimeSymptoms,
       patient.exerciseInduced || symptom.exercise
-    ];
-
+    ]
+    const patientDataWithKeys = {
+      age: patient.age,
+      gender: patient.gender === 'Male' ? 1 : 0,
+      ethnicity: patient.ethnicity || 0,
+      educationLevel: patient.educationLevel || 0,
+      bmi: patient.bmi,
+      smoking: patient.smoking,
+      physicalActivity: patient.physicalActivity,
+      dietQuality: patient.dietQuality || 5,
+      sleepQuality: patient.sleepQuality || 5,
+      pollutionExposure: patient.pollutionExposure,
+      pollenExposure: patient.pollenExposure,
+      dustExposure: patient.dustExposure,
+      petAllergy: patient.petAllergy,
+      familyHistoryAsthma: patient.familyHistoryAsthma,
+      historyOfAllergies: patient.historyOfAllergies,
+      eczema: patient.eczema || 0,
+      hayfever: patient.hayfever,
+      gastroesophagealReflux: patient.gastroesophagealReflux,
+      lungFunctionFEV1: patient.lungFunctionFEV1,
+      lungFunctionFVC: patient.lungFunctionFVC,
+      wheezing: symptom.wheezing,
+      shortnessOfBreath: symptom.shortnessOfBreath,
+      chestTightness: symptom.chestTightness,
+      coughing: symptom.coughing,
+      nighttimeSymptoms: symptom.nighttimeSymptoms,
+      exerciseInduced: patient.exerciseInduced || symptom.exercise,
+    };
+    
+    console.log("🧾 Final patient data for prediction:", patientDataWithKeys);
+    
+    console.log(patientData)
     // 4. Call Python script
-    const python = spawn('python', ['predict_model.py', JSON.stringify(patientData)]);
+    const python = spawn('python', ['predict_modal.py', JSON.stringify(patientData)]);
 
     let result = '';
     python.stdout.on('data', (data) => {

@@ -36,6 +36,11 @@ const Dashboard = ({ doctor: initialDoctor }) => {
   const [recentAppointments, setRecentAppointments] = useState(dummyAppointments);
   const [loading, setLoading] = useState(true);
   const [user,setUser]=useState("")
+  const handleJoinCall = (appointment) => {
+    // For example, use appointment.id or any unique field
+    const roomID = `room-${appointment.id}`;
+    navigate(`/video-call/${roomID}`);
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -165,6 +170,14 @@ const Dashboard = ({ doctor: initialDoctor }) => {
                           }`}>
                             {appointment.status}
                           </span>
+                          {appointment.status === 'Confirmed' && (
+                            <button
+                              onClick={() => handleJoinCall(appointment)}
+                              className="ml-3 px-3 py-1 text-xs font-semibold bg-indigo-600 text-white rounded hover:bg-indigo-700 transition duration-200"
+                            >
+                              Join Call
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

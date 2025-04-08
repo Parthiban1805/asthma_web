@@ -5,6 +5,7 @@ import axios from 'axios';
 const Dashboard = () => {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [caretakers, setCaretakers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
@@ -15,13 +16,15 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [patientsRes, doctorsRes] = await Promise.all([
+      const [patientsRes, doctorsRes, caretakersRes] = await Promise.all([
         axios.get('http://localhost:5000/api/admin/patients'),
-        axios.get('http://localhost:5000/api/admin/doctors')
+        axios.get('http://localhost:5000/api/admin/doctors'),
+        axios.get('http://localhost:5000/api/admin/caretakers')
       ]);
       
       setPatients(patientsRes.data);
       setDoctors(doctorsRes.data);
+      setCaretakers(caretakersRes.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -37,15 +40,13 @@ const Dashboard = () => {
     navigate(`/admin-doctor/${doctorId}`);
   };
 
-  const handleEditPatient = (e, patientId) => {
-    e.stopPropagation(); // Prevent row click event
-    navigate(`/edit-patient/${patientId}`);
+  const handleCaretakerClick = (caretakerId) => {
+    navigate(`/admin-caretaker/${caretakerId}`);
   };
 
-  const handleEditDoctor = (e, doctorId) => {
-    e.stopPropagation(); // Prevent row click event
-    navigate(`/edit-doctor/${doctorId}`);
-  };
+
+
+  
 
   const handleDeletePatient = async (e, patientId) => {
     e.stopPropagation(); // Prevent row click event
@@ -67,6 +68,18 @@ const Dashboard = () => {
         setDoctors(doctors.filter(doctor => doctor.doctorId !== doctorId));
       } catch (error) {
         console.error('Error deleting doctor:', error);
+      }
+    }
+  };
+
+  const handleDeleteCaretaker = async (e, caretakerId) => {
+    e.stopPropagation(); // Prevent row click event
+    if (window.confirm('Are you sure you want to delete this caretaker?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/caretakers/${caretakerId}`);
+        setCaretakers(caretakers.filter(caretaker => caretaker._id !== caretakerId));
+      } catch (error) {
+        console.error('Error deleting caretaker:', error);
       }
     }
   };
@@ -109,7 +122,20 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Card 3 - Appointments */}
+          {/* Card 3 - Total Caretakers */}
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-amber-500 transition-all hover:shadow-lg">
+            <div className="flex items-center pt-2">
+              <div className="p-3 rounded-full bg-amber-100 mr-4 flex items-center justify-center">
+                <span className="text-amber-600 font-bold text-lg">🧑‍⚕️</span>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 font-medium">Total Caretakers</div>
+                <div className="text-2xl font-bold text-gray-800">{caretakers.length}</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Card 4 - Appointments */}
           <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500 transition-all hover:shadow-lg">
             <div className="flex items-center pt-2">
               <div className="p-3 rounded-full bg-purple-100 mr-4 flex items-center justify-center">
@@ -117,19 +143,6 @@ const Dashboard = () => {
               </div>
               <div>
                 <div className="text-sm text-gray-500 font-medium">Appointments</div>
-                <div className="text-2xl font-bold text-gray-800">0</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Card 4 - Critical Cases */}
-          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500 transition-all hover:shadow-lg">
-            <div className="flex items-center pt-2">
-              <div className="p-3 rounded-full bg-red-100 mr-4 flex items-center justify-center">
-                <span className="text-red-600 font-bold text-lg">⚠️</span>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500 font-medium">Critical Cases</div>
                 <div className="text-2xl font-bold text-gray-800">0</div>
               </div>
             </div>
@@ -150,6 +163,12 @@ const Dashboard = () => {
               onClick={() => setActiveTab(1)}
             >
               Doctors
+            </button>
+            <button 
+              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors ${activeTab === 2 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+              onClick={() => setActiveTab(2)}
+            >
+              Caretakers
             </button>
           </div>
           
@@ -196,12 +215,7 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.dateOfBirth || (patient.age ? `${patient.age} yrs` : 'N/A')}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.phone}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button 
-                              className="text-blue-600 hover:text-blue-800 mr-3"
-                              onClick={(e) => handleEditPatient(e, patient.patientId)}
-                            >
-                              Edit
-                            </button>
+                            
                             <button 
                               className="text-red-600 hover:text-red-800"
                               onClick={(e) => handleDeletePatient(e, patient.patientId)}
@@ -254,12 +268,7 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doctor.name}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.specialization || 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button 
-                              className="text-blue-600 hover:text-blue-800 mr-3"
-                              onClick={(e) => handleEditDoctor(e, doctor.doctorId)}
-                            >
-                              Edit
-                            </button>
+                           
                             <button 
                               className="text-red-600 hover:text-red-800 mr-3"
                               onClick={(e) => handleDeleteDoctor(e, doctor.doctorId)}
@@ -267,6 +276,62 @@ const Dashboard = () => {
                               Delete
                             </button>
                             <button className="text-green-600 hover:text-green-800">Schedule</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Caretakers Tab Panel */}
+            {activeTab === 2 && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800">Caretaker List</h2>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search caretakers..."
+                      className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <div className="absolute left-3 top-3 text-gray-400">
+                      🔍
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patients</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {caretakers.map((caretaker) => (
+                        <tr 
+                          key={caretaker._id} 
+                          onClick={() => handleCaretakerClick(caretaker._id)}
+                          className="hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{caretaker.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{caretaker.email}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caretaker.phone || 'N/A'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caretaker.patients?.length || 0}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          
+                            <button 
+                              className="text-red-600 hover:text-red-800 mr-3"
+                              onClick={(e) => handleDeleteCaretaker(e, caretaker._id)}
+                            >
+                              Delete
+                            </button>
+                            <button className="text-green-600 hover:text-green-800">Assign Patient</button>
                           </td>
                         </tr>
                       ))}

@@ -14,6 +14,14 @@ const PatientDashboard = () => {
     const [showAppointmentForm, setShowAppointmentForm] = useState(false);
     const [editingProfile, setEditingProfile] = useState(false);
     const [editedProfile, setEditedProfile] = useState({});
+    const [doctors, setDoctors] = useState([]);
+    const [showQueryForm, setShowQueryForm] = useState(false);
+    const [query, setQuery] = useState({
+      subject: '',
+      message: '',
+      priority: 'Normal'
+    });
+    const [queries, setQueries] = useState([]);
     
     // New symptom form state
     const [newSymptom, setNewSymptom] = useState({
@@ -100,6 +108,14 @@ const PatientDashboard = () => {
             console.error("Error fetching symptoms:", err);
             setSymptoms([]);
           }
+          try {
+            // Fetch queries
+            const queriesResponse = await axios.get(`http://localhost:5000/api/patient-queries/${patientId}`);
+            setQueries(queriesResponse.data || []);
+          } catch (err) {
+            console.error("Error fetching queries:", err);
+            setQueries([]);
+          }
           
           try {
             // Fetch caretakers
@@ -154,7 +170,7 @@ const PatientDashboard = () => {
       });
     };
 
-    const handleProfileChange = (e) => {
+    const handleProfileChange= (e) => {
       const { name, value, type, checked } = e.target;
       setEditedProfile({
         ...editedProfile,
@@ -216,38 +232,38 @@ const PatientDashboard = () => {
         }
       };
           
-    const submitAppointment = async (e) => {
-      e.preventDefault();
+      const submitAppointment = async (e) => {
+        e.preventDefault();
       
-      try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        // Use the MongoDB _id of the patient from your patient state
-        const patientMongoId = patient?._id; 
-        
-        if (!patientMongoId) {
-          throw new Error("Patient ID not available");
+        try {
+          const user = JSON.parse(localStorage.getItem('user'));
+          const patientMongoId = patient?._id;
+      
+          if (!patientMongoId) {
+            throw new Error("Patient ID not available");
+          }
+      
+          const response = await axios.post('http://localhost:5000/api/patient-appointments', {
+            ...newAppointment,
+            patientId: patientMongoId,
+            doctorId: newAppointment.doctorId || null, // Send doctorId here
+          });
+      
+          setAppointments([...appointments, response.data]);
+          setShowAppointmentForm(false);
+          setNewAppointment({
+            dateTime: '',
+            duration: 30,
+            purpose: '',
+            notes: '',
+            doctorId: '', // Reset the doctorId as well
+          });
+        } catch (err) {
+          console.error(err);
+          alert('Failed to request appointment');
         }
-        
-        const response = await axios.post('http://localhost:5000/api/patient-appointments', {
-          ...newAppointment,
-          patientId: patientMongoId,
-          doctorId: patient?.doctorId || null,
-          status: 'Pending'
-        });
-        
-        setAppointments([...appointments, response.data]);
-        setShowAppointmentForm(false);
-        setNewAppointment({
-          dateTime: '',
-          duration: 30,
-          purpose: '',
-          notes: '',
-        });
-      } catch (err) {
-        console.error(err);
-        alert('Failed to request appointment');
-      }
-    };
+      };
+      
 
     const submitProfileEdit = async (e) => {
       e.preventDefault();
@@ -267,6 +283,10 @@ const PatientDashboard = () => {
         console.error(err);
         alert('Failed to update profile');
       }
+    };
+    const handleJoinCall = (appointment) => {
+      const roomID = `room-${appointment._id || appointment.id}`;
+      navigate(`/patient-video-call/${roomID}`);
     };
     const handlePrediction = async () => {
       try {
@@ -297,8 +317,66 @@ const PatientDashboard = () => {
         alert('Error running prediction');
       }
     };
+    // Add this to your state declarations
+const [showSosForm, setShowSosForm] = useState(false);
+const [sosMessage, setSosMessage] = useState('');
+
+// Add this handler function
+const handleSosSubmit = async (e) => {
+  e.preventDefault();
+  
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const patientId = user.patientId;
     
+    const response = await axios.post('http://localhost:5000/api/send-sos', {
+      patientId,
+      message: sosMessage
+    });
     
+    alert('SOS message sent successfully!');
+    setSosMessage('');
+    setShowSosForm(false);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to send SOS message. Please try calling emergency services.');
+  }
+};
+const handleQueryChange = (e) => {
+  const { name, value } = e.target;
+  setQuery({
+    ...query,
+    [name]: value
+  });
+};
+const submitQuery = async (e) => {
+  e.preventDefault();
+  
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const patientId = user.patientId;
+    
+    const response = await axios.post('http://localhost:5000/api/patient-queries', {
+      ...query,
+      patientId
+    });
+    
+    setQueries([...queries, response.data]);
+    setShowQueryForm(false);
+    setQuery({
+      subject: '',
+      message: '',
+      priority: 'Normal'
+    });
+    
+    alert('Your query has been submitted successfully!');
+  } catch (err) {
+    console.error(err);
+    alert('Failed to submit query');
+  }
+};
+
+
     if (loading) return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-300 to-purple-400">
         <div className="text-center p-8 rounded-lg shadow-lg bg-white">
@@ -527,7 +605,55 @@ const PatientDashboard = () => {
             </div>
           )}
         </div>
-        
+        {/* SOS Section */}
+<div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-red-500 hover:shadow-lg transition-shadow">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-2xl font-semibold text-red-700">Emergency Assistance</h2>
+    <button 
+      className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors flex items-center"
+      onClick={() => setShowSosForm(!showSosForm)}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      {showSosForm ? 'Cancel' : 'SOS Alert'}
+    </button>
+  </div>
+  
+  {showSosForm && (
+    <form onSubmit={handleSosSubmit} className="mb-6 bg-gradient-to-r from-red-50 to-pink-50 p-5 rounded-md shadow-sm">
+      <p className="text-red-600 mb-3">
+        <strong>IMPORTANT:</strong> This will send an urgent alert to your care team. For life-threatening emergencies, call 911 immediately.
+      </p>
+      
+      <div className="mb-4">
+        <label htmlFor="sosMessage" className="block mb-1 text-red-700">Describe your emergency:</label>
+        <textarea
+          id="sosMessage"
+          value={sosMessage}
+          onChange={(e) => setSosMessage(e.target.value)}
+          className="w-full border border-red-200 rounded-md p-2 focus:ring-2 focus:ring-red-300 focus:border-red-300 focus:outline-none"
+          rows="3"
+          placeholder="Describe your situation and symptoms"
+          required
+        ></textarea>
+      </div>
+      
+      <button 
+        type="submit" 
+        className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition-colors"
+      >
+        Send Emergency Alert
+      </button>
+    </form>
+  )}
+  
+  <p className="bg-red-50 p-4 rounded-md text-red-800">
+    This feature allows you to alert your doctor and caretakers about an urgent medical situation.
+    <br />
+    <strong>For life-threatening emergencies, call 911 or your local emergency number immediately.</strong>
+  </p>
+</div>
         {/* Medical History */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
           <h2 className="text-2xl font-semibold mb-4 text-purple-700">Medical History</h2>
@@ -623,256 +749,104 @@ const PatientDashboard = () => {
             </button>
           </div>
           {showSymptomForm && (
-  <form onSubmit={submitSymptom} className="mb-6 bg-gradient-to-r from-green-50 to-teal-50 p-5 rounded-md shadow-sm">
-    <h3 className="font-medium mb-3 text-green-700">Record New Symptoms</h3>
-    
-    <div className="grid md:grid-cols-2 gap-6 mb-4">
-      {/* Symptom Severity Sliders */}
-      <div>
-        <h4 className="font-medium mb-3 text-green-700">Symptom Severity (0-10)</h4>
-        
-        <div className="mb-3">
-          <label htmlFor="coughing" className="block mb-1">Coughing: {newSymptom.coughing}</label>
-          <input 
-            type="range" 
-            id="coughing" 
-            name="coughing" 
-            min="0" 
-            max="10" 
-            value={newSymptom.coughing}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Severe</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="chestTightness" className="block mb-1">Chest Tightness: {newSymptom.chestTightness}</label>
-          <input 
-            type="range" 
-            id="chestTightness" 
-            name="chestTightness" 
-            min="0" 
-            max="10" 
-            value={newSymptom.chestTightness}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Severe</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="shortnessOfBreath" className="block mb-1">Shortness of Breath: {newSymptom.shortnessOfBreath}</label>
-          <input 
-            type="range" 
-            id="shortnessOfBreath" 
-            name="shortnessOfBreath" 
-            min="0" 
-            max="10" 
-            value={newSymptom.shortnessOfBreath}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Severe</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="wheezing" className="block mb-1">Wheezing: {newSymptom.wheezing}</label>
-          <input 
-            type="range" 
-            id="wheezing" 
-            name="wheezing" 
-            min="0" 
-            max="10" 
-            value={newSymptom.wheezing}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Severe</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="nighttimeSymptoms" className="block mb-1">Nighttime Symptoms: {newSymptom.nighttimeSymptoms}</label>
-          <input 
-            type="range" 
-            id="nighttimeSymptoms" 
-            name="nighttimeSymptoms" 
-            min="0" 
-            max="10" 
-            value={newSymptom.nighttimeSymptoms}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Severe</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="exercise" className="block mb-1">Exercise-Related: {newSymptom.exercise}</label>
-          <input 
-            type="range" 
-            id="exercise" 
-            name="exercise" 
-            min="0" 
-            max="10" 
-            value={newSymptom.exercise}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Severe</span>
-          </div>
-          {newSymptom.exercise > 0 && patient.exerciseInduced && (
-            <span className="text-sm text-orange-600">
-              * Previous history of exercise-induced symptoms detected
-            </span>
-          )}
-        </div>
-      </div>
-      
-      {/* Triggers Section */}
-      <div>
-        <h4 className="font-medium mb-3 text-green-700">Triggers</h4>
-        
-        <div className="flex items-center mb-3">
-          <input 
-            type="checkbox" 
-            id="smoking" 
-            name="smoking" 
-            checked={newSymptom.smoking}
-            onChange={handleSymptomChange}
-            className="h-4 w-4 mr-2 text-green-600"
-          />
-          <label htmlFor="smoking">Smoking</label>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="pollutionExposure" className="block mb-1">Pollution Exposure: {newSymptom.pollutionExposure}</label>
-          <input 
-            type="range" 
-            id="pollutionExposure" 
-            name="pollutionExposure" 
-            min="0" 
-            max="10" 
-            value={newSymptom.pollutionExposure}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>High</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="pollenExposure" className="block mb-1">Pollen Exposure: {newSymptom.pollenExposure}</label>
-          <input 
-            type="range" 
-            id="pollenExposure" 
-            name="pollenExposure" 
-            min="0" 
-            max="10" 
-            value={newSymptom.pollenExposure}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>High</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="dustExposure" className="block mb-1">Dust Exposure: {newSymptom.dustExposure}</label>
-          <input 
-            type="range" 
-            id="dustExposure" 
-            name="dustExposure" 
-            min="0" 
-            max="10" 
-            value={newSymptom.dustExposure}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>High</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="physicalActivity" className="block mb-1">Physical Activity Level: {newSymptom.physicalActivity}</label>
-          <input 
-            type="range" 
-            id="physicalActivity" 
-            name="physicalActivity" 
-            min="0" 
-            max="10" 
-            value={newSymptom.physicalActivity}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>Intense</span>
-          </div>
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="petExposure" className="block mb-1">Pet Exposure: {newSymptom.petExposure}</label>
-          <input 
-            type="range" 
-            id="petExposure" 
-            name="petExposure" 
-            min="0" 
-            max="10" 
-            value={newSymptom.petExposure}
-            onChange={handleSymptomChange}
-            className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-green-700">
-            <span>None</span>
-            <span>High</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div className="mb-4">
-      <label htmlFor="notes" className="block mb-1 text-green-700">Notes:</label>
-      <textarea
-        id="notes"
-        name="notes"
-        value={newSymptom.notes}
-        onChange={handleSymptomChange}
-        className="w-full border border-green-200 rounded-md p-2 focus:ring-2 focus:ring-green-300 focus:border-green-300 focus:outline-none"
-        rows="3"
-        placeholder="Describe any additional details about your symptoms or triggers"
-      ></textarea>
-    </div>
-    
-    <button 
-      type="submit" 
-      className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
-    >
-      Save Symptoms
-    </button>
-  </form>
+ <form onSubmit={submitSymptom} className="mb-6 bg-gradient-to-r from-green-50 to-teal-50 p-5 rounded-md shadow-sm">
+ <h3 className="font-medium mb-3 text-green-700">Record New Symptoms</h3>
+
+ <div className="grid md:grid-cols-2 gap-6 mb-4">
+   {/* Symptom Severity Number Inputs */}
+   <div>
+     <h4 className="font-medium mb-3 text-green-700">Symptom Severity (0-10)</h4>
+
+     {[
+       ['coughing', 'Coughing'],
+       ['chestTightness', 'Chest Tightness'],
+       ['shortnessOfBreath', 'Shortness of Breath'],
+       ['wheezing', 'Wheezing'],
+       ['nighttimeSymptoms', 'Nighttime Symptoms'],
+       ['exercise', 'Exercise-Related'],
+     ].map(([key, label]) => (
+       <div className="mb-3" key={key}>
+         <label htmlFor={key} className="block mb-1">{label}:</label>
+         <input
+           type="number"
+           id={key}
+           name={key}
+           min="0"
+           max="10"
+           value={newSymptom[key]}
+           onChange={handleSymptomChange}
+           className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+         />
+         {key === 'exercise' && newSymptom.exercise > 0 && patient.exerciseInduced && (
+           <span className="text-sm text-orange-600">
+             * Previous history of exercise-induced symptoms detected
+           </span>
+         )}
+       </div>
+     ))}
+   </div>
+
+   {/* Triggers Section */}
+   <div>
+     <h4 className="font-medium mb-3 text-green-700">Triggers</h4>
+
+     <div className="flex items-center mb-3">
+       <input
+         type="checkbox"
+         id="smoking"
+         name="smoking"
+         checked={newSymptom.smoking}
+         onChange={handleSymptomChange}
+         className="h-4 w-4 mr-2 text-green-600"
+       />
+       <label htmlFor="smoking">Smoking</label>
+     </div>
+
+     {[
+       ['pollutionExposure', 'Pollution Exposure'],
+       ['pollenExposure', 'Pollen Exposure'],
+       ['dustExposure', 'Dust Exposure'],
+       ['physicalActivity', 'Physical Activity Level'],
+       ['petExposure', 'Pet Exposure'],
+     ].map(([key, label]) => (
+       <div className="mb-3" key={key}>
+         <label htmlFor={key} className="block mb-1">{label}:</label>
+         <input
+           type="number"
+           id={key}
+           name={key}
+           min="0"
+           max="10"
+           value={newSymptom[key]}
+           onChange={handleSymptomChange}
+           className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+         />
+       </div>
+     ))}
+   </div>
+ </div>
+
+ <div className="mb-4">
+   <label htmlFor="notes" className="block mb-1 text-green-700">Notes:</label>
+   <textarea
+     id="notes"
+     name="notes"
+     value={newSymptom.notes}
+     onChange={handleSymptomChange}
+     className="w-full border border-green-200 rounded-md p-2 focus:ring-2 focus:ring-green-300 focus:border-green-300 focus:outline-none"
+     rows="3"
+     placeholder="Describe any additional details about your symptoms or triggers"
+   ></textarea>
+ </div>
+
+ <button
+   type="submit"
+   className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+ >
+   Save Symptoms
+ </button>
+</form>
+
 )}
 
           
@@ -881,16 +855,12 @@ const PatientDashboard = () => {
     <table className="w-full text-sm">
       <thead className="bg-green-100">
         <tr>
-          <th className="p-3 text-left text-green-800">Date</th>
-          <th className="p-3 text-left text-green-800">Symptoms</th>
           <th className="p-3 text-left text-green-800">Triggers</th>
-          <th className="p-3 text-left text-green-800">Notes</th>
         </tr>
       </thead>
       <tbody>
         {symptoms.map((symptom, index) => (
           <tr key={symptom._id} className={index % 2 === 0 ? "bg-white" : "bg-green-50"}>
-            <td className="p-3 border-t border-green-100">{new Date(symptom.createdAt).toLocaleDateString()}</td>
             <td className="p-3 border-t border-green-100">
               <div className="flex flex-col gap-1">
                 {symptom.coughing > 0 && (
@@ -1004,7 +974,6 @@ const PatientDashboard = () => {
                 )}
               </div>
             </td>
-            <td className="p-3 border-t border-green-100">{symptom.notes || 'No notes'}</td>
           </tr>
         ))}
       </tbody>
@@ -1048,7 +1017,19 @@ const PatientDashboard = () => {
                     required
                   />
                 </div>
-                
+                <div className="mb-4">
+    <label htmlFor="doctorId" className="block mb-1 text-yellow-700">Doctor ID:</label>
+    <input
+      type="text"
+      id="doctorId"
+      name="doctorId"
+      value={newAppointment.doctorId}
+      onChange={handleAppointmentChange}
+      className="w-full border border-yellow-200 rounded-md p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 focus:outline-none"
+      placeholder="Enter Doctor ID"
+    />
+  </div>
+
                 <div>
                   <label htmlFor="duration" className="block mb-1 text-yellow-700">Duration (minutes):</label>
                   <select
@@ -1114,7 +1095,6 @@ const PatientDashboard = () => {
                   <tr>
                     <th className="p-3 text-left text-yellow-800">Date & Time</th>
                     <th className="p-3 text-left text-yellow-800">Purpose</th>
-                    <th className="p-3 text-left text-yellow-800">Doctor</th>
                     <th className="p-3 text-left text-yellow-800">Status</th>
                   </tr>
                 </thead>
@@ -1135,9 +1115,7 @@ const PatientDashboard = () => {
                           </div>
                         )}
                       </td>
-                      <td className="p-3 border-t border-yellow-100">
-                        {appointment.doctorName || 'To be assigned'}
-                      </td>
+                      
                       <td className="p-3 border-t border-yellow-100">
                         <span className={`px-2 py-1 rounded text-xs ${
                           appointment.status === 'Confirmed' ? 'bg-green-100 text-green-800' : 
@@ -1147,6 +1125,14 @@ const PatientDashboard = () => {
                         }`}>
                           {appointment.status}
                         </span>
+                        {appointment.status === 'Confirmed' && (
+                          <button
+                            onClick={() => handleJoinCall(appointment)}
+                            className="ml-3 px-3 py-1 text-xs font-semibold bg-indigo-600 text-white rounded hover:bg-indigo-700 transition duration-200"
+                          >
+                            Join Call
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1158,36 +1144,118 @@ const PatientDashboard = () => {
           )}
         </div>
         
-        {/* Caregivers */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-pink-500 hover:shadow-lg transition-shadow">
-          <h2 className="text-2xl font-semibold mb-4 text-pink-700">My Care Team</h2>
-          
-          {caretakers.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {caretakers.map(caretaker => (
-                <div key={caretaker._id} className="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-md">
-                  <div className="flex items-center mb-2">
-                    <div className="bg-pink-200 p-2 rounded-full mr-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-pink-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-lg">{caretaker.name}</h3>
-                      <p className="text-sm text-gray-600">{caretaker.type}</p>
-                    </div>
-                  </div>
-                  <div className="border-t border-pink-200 pt-2 mt-2">
-                    <p className="text-sm"><span className="font-medium text-pink-700">Phone:</span> {caretaker.phone}</p>
-                    <p className="text-sm"><span className="font-medium text-pink-700">Email:</span> {caretaker.email}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="bg-pink-50 p-4 rounded-md text-pink-800">No caretakers assigned yet</p>
-          )}
+     
+        {/* Patient Queries Section */}
+<div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-teal-500 hover:shadow-lg transition-shadow">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-2xl font-semibold text-teal-700">My Questions</h2>
+    <button 
+      className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors flex items-center"
+      onClick={() => setShowQueryForm(!showQueryForm)}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {showQueryForm ? 'Cancel' : 'Ask a Question'}
+    </button>
+  </div>
+  
+  {showQueryForm && (
+    <form onSubmit={submitQuery} className="mb-6 bg-gradient-to-r from-teal-50 to-cyan-50 p-5 rounded-md shadow-sm">
+      <h3 className="font-medium mb-3 text-teal-700">Submit a Question to Your Care Team</h3>
+      
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label htmlFor="subject" className="block mb-1 text-teal-700">Subject:</label>
+          <input
+            type="text"
+            id="subject"
+            name="subject"
+            value={query.subject}
+            onChange={handleQueryChange}
+            className="w-full border border-teal-200 rounded-md p-2 focus:ring-2 focus:ring-teal-300 focus:border-teal-300 focus:outline-none"
+            placeholder="Brief topic of your question"
+            required
+          />
         </div>
+        
+        <div>
+          <label htmlFor="priority" className="block mb-1 text-teal-700">Priority:</label>
+          <select
+            id="priority"
+            name="priority"
+            value={query.priority}
+            onChange={handleQueryChange}
+            className="w-full border border-teal-200 rounded-md p-2 focus:ring-2 focus:ring-teal-300 focus:border-teal-300 focus:outline-none"
+          >
+            <option value="Low">Low - General question</option>
+            <option value="Normal">Normal - Need answer within a few days</option>
+            <option value="High">High - Need answer soon</option>
+          </select>
+        </div>
+      </div>
+      
+      <div className="mb-4">
+        <label htmlFor="message" className="block mb-1 text-teal-700">Your Question:</label>
+        <textarea
+          id="message"
+          name="message"
+          value={query.message}
+          onChange={handleQueryChange}
+          className="w-full border border-teal-200 rounded-md p-2 focus:ring-2 focus:ring-teal-300 focus:border-teal-300 focus:outline-none"
+          rows="4"
+          placeholder="Type your detailed question here"
+          required
+        ></textarea>
+      </div>
+      
+      <button 
+        type="submit" 
+        className="bg-teal-600 text-white px-6 py-2 rounded-md hover:bg-teal-700 transition-colors"
+      >
+        Submit Question
+      </button>
+    </form>
+  )}
+  
+  {queries.length > 0 ? (
+    <div className="overflow-x-auto bg-gradient-to-r from-teal-50 to-cyan-50 p-2 rounded-md">
+      <table className="w-full text-sm">
+        <thead className="bg-teal-100">
+          <tr>
+            <th className="p-3 text-left text-teal-800">Subject</th>
+            <th className="p-3 text-left text-teal-800">Priority</th>
+          </tr>
+        </thead>
+        <tbody>
+          {queries.map((queryItem, index) => (
+            <tr key={queryItem._id} className={index % 2 === 0 ? "bg-white" : "bg-teal-50"}>
+              
+              <td className="p-3 border-t border-teal-100">
+                {queryItem.subject}
+                <div className="text-xs text-gray-500 mt-1 italic">
+                  "{queryItem.message.length > 50 ? queryItem.message.substring(0, 50) + '...' : queryItem.message}"
+                </div>
+              </td>
+              <td className="p-3 border-t border-teal-100">
+                <span className={`px-2 py-1 rounded text-xs ${
+                  queryItem.priority === 'High' ? 'bg-red-100 text-red-800' : 
+                  queryItem.priority === 'Normal' ? 'bg-yellow-100 text-yellow-800' : 
+                  'bg-green-100 text-green-800'
+                }`}>
+                  {queryItem.priority}
+                </span>
+              </td>
+            
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p className="bg-teal-50 p-4 rounded-md text-teal-800">You haven't submitted any questions yet</p>
+  )}
+</div>
       </div>
     </div>
   );

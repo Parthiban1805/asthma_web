@@ -313,8 +313,8 @@ const AppointmentSystem = () => {
                               <option value="">Select Patient</option>
                               {patients.map((patient) => (
                                 <option key={patient._id} value={patient._id}>
-                                  {patient.name}
-                                </option>
+                                    {patient.patientId} - {patient.name}
+                                    </option>
                               ))}
                             </select>
                           </div>

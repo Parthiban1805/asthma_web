@@ -2,22 +2,26 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const CaretakerDashboard = () => {
-  const [unassignedPatients, setUnassignedPatients] = useState([]);
   const [assignedPatients, setAssignedPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientDetails, setPatientDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [caretakerId, setCaretakerId] = useState(null);
+  
+  // Search functionality
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   // Get caretaker ID from local storage on component mount
   useEffect(() => {
     try {
       // Get user data from local storage
       const userData = JSON.parse(localStorage.getItem('user')) || {};
-    console.log(userData.caretakerId)
-      if (userData.role === 'caretaker' ) {
-        
+      console.log(userData.caretakerId);
+      if (userData.role === 'caretaker') {
         setCaretakerId(userData.caretakerId);
       } else {
         setError('Invalid caretaker data in local storage');
@@ -26,21 +30,6 @@ const CaretakerDashboard = () => {
       console.error('Error parsing user data from local storage:', error);
       setError('Failed to load user data');
     }
-  }, []);
-
-  // Fetch unassigned patients
-  useEffect(() => {
-    const fetchUnassignedPatients = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/caretaker/unassigned-patients');
-        setUnassignedPatients(response.data);
-      } catch (error) {
-        console.error('Error fetching unassigned patients:', error);
-        setError('Failed to load unassigned patients');
-      }
-    };
-    
-    fetchUnassignedPatients();
   }, []);
 
   // Fetch assigned patients only if caretakerId is defined
@@ -64,6 +53,37 @@ const CaretakerDashboard = () => {
     fetchAssignedPatients();
   }, [caretakerId]);
 
+  // Search for patients by patientId
+  const searchPatients = async (e) => {
+    e.preventDefault();
+    
+    if (!searchQuery.trim()) {
+      setSearchError('Please enter a Patient ID to search');
+      return;
+    }
+    
+    try {
+      setSearching(true);
+      setSearchError(null);
+      
+      // Call the new search endpoint
+      const response = await axios.get(`http://localhost:5000/api/caretaker/search-patient/${searchQuery}`);
+      
+      if (response.data) {
+        setSearchResults([response.data]);
+      } else {
+        setSearchResults([]);
+        setSearchError('No patient found with that ID');
+      }
+    } catch (error) {
+      console.error('Error searching for patient:', error);
+      setSearchError('Failed to search for patient');
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   // Assign a patient to the caretaker
   const assignPatient = async (patientId) => {
     // Guard clause for missing caretakerId
@@ -79,12 +99,13 @@ const CaretakerDashboard = () => {
         patientId
       });
       
-      // Refresh both lists
-      const unassignedResponse = await axios.get('http://localhost:5000/api/caretaker/unassigned-patients');
-      setUnassignedPatients(unassignedResponse.data);
-      
+      // Refresh assigned patients list
       const assignedResponse = await axios.get(`http://localhost:5000/api/caretaker/assigned-patients/${caretakerId}`);
       setAssignedPatients(assignedResponse.data);
+      
+      // Clear search results after assignment
+      setSearchResults([]);
+      setSearchQuery('');
       
       setLoading(false);
       setError(null);
@@ -120,36 +141,6 @@ const CaretakerDashboard = () => {
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
           <p>Please log in as a caretaker to view your dashboard.</p>
         </div>
-        
-        {/* Still show unassigned patients section for reference */}
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Unassigned Patients</h2>
-          {unassignedPatients.length === 0 ? (
-            <p>No unassigned patients available.</p>
-          ) : (
-            <ul className="divide-y">
-              {unassignedPatients.map(patient => (
-                <li key={patient._id} className="py-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{patient.name}</p>
-                      <p className="text-sm text-gray-600">ID: {patient.patientId}</p>
-                      <p className="text-sm text-gray-600">
-                        {patient.age} years, {patient.gender}
-                      </p>
-                    </div>
-                    <button
-                      disabled={true}
-                      className="bg-gray-300 text-gray-600 px-3 py-1 rounded cursor-not-allowed"
-                    >
-                      Log in to assign
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
     );
   }
@@ -164,17 +155,36 @@ const CaretakerDashboard = () => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Unassigned Patients Panel */}
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Unassigned Patients</h2>
-          {loading && unassignedPatients.length === 0 ? (
-            <p>Loading patients...</p>
-          ) : unassignedPatients.length === 0 ? (
-            <p>No unassigned patients available.</p>
-          ) : (
+      {/* Search Box */}
+      <div className="bg-white p-4 rounded shadow mb-6">
+        <h2 className="text-xl font-semibold mb-4">Search Patient by ID</h2>
+        <form onSubmit={searchPatients} className="flex space-x-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Enter Patient ID"
+            className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={searching}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+          >
+            {searching ? 'Searching...' : 'Search'}
+          </button>
+        </form>
+        
+        {searchError && (
+          <p className="text-red-500 text-sm mt-2">{searchError}</p>
+        )}
+        
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-lg font-medium mb-2">Search Results</h3>
             <ul className="divide-y">
-              {unassignedPatients.map(patient => (
+              {searchResults.map(patient => (
                 <li key={patient._id} className="py-2">
                   <div className="flex justify-between items-center">
                     <div>
@@ -184,20 +194,42 @@ const CaretakerDashboard = () => {
                         {patient.age} years, {patient.gender}
                       </p>
                     </div>
-                    <button
-                      onClick={() => assignPatient(patient._id)}
-                      disabled={loading}
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 disabled:bg-blue-300"
-                    >
-                      {loading ? 'Assigning...' : 'Assign'}
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => viewPatientDetails(patient._id)}
+                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      >
+                        View
+                      </button>
+                      {!patient.caretakerId && (
+                        <button
+                          onClick={() => assignPatient(patient._id)}
+                          disabled={loading}
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 disabled:bg-blue-300"
+                        >
+                          {loading ? 'Assigning...' : 'Assign'}
+                        </button>
+                      )}
+                      {patient.caretakerId === caretakerId && (
+                        <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded">
+                          Assigned to you
+                        </span>
+                      )}
+                      {patient.caretakerId && patient.caretakerId !== caretakerId && (
+                        <span className="bg-yellow-200 text-yellow-700 px-3 py-1 rounded">
+                          Already assigned
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-        
+          </div>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Assigned Patients Panel */}
         <div className="bg-white p-4 rounded shadow">
           <h2 className="text-xl font-semibold mb-4">My Patients</h2>
@@ -242,6 +274,29 @@ const CaretakerDashboard = () => {
             <p>No details found for this patient.</p>
           ) : (
             <div>
+              {/* Action button to assign if not assigned */}
+              {patientDetails.patient.caretakerId === null && (
+                <div className="mb-4 p-2 bg-yellow-100 rounded flex justify-between items-center">
+                  <p className="text-yellow-800">This patient is not assigned to any caretaker.</p>
+                  <button
+                    onClick={() => assignPatient(patientDetails.patient._id)}
+                    disabled={loading}
+                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 disabled:bg-blue-300"
+                  >
+                    {loading ? 'Assigning...' : 'Assign to me'}
+                  </button>
+                </div>
+              )}
+              
+              {patientDetails.patient.caretakerId && 
+               patientDetails.patient.caretakerId !== caretakerId && (
+                <div className="mb-4 p-2 bg-yellow-100 rounded">
+                  <p className="text-yellow-800">
+                    This patient is assigned to another caretaker.
+                  </p>
+                </div>
+              )}
+              
               {/* Basic Information */}
               <section className="mb-6">
                 <h3 className="text-lg font-medium mb-2">Basic Information</h3>
@@ -260,7 +315,7 @@ const CaretakerDashboard = () => {
                   </div>
                   <div>
                     <p className="font-semibold">Contact:</p>
-                    <p>{patientDetails.patient.phone}</p>
+                    <p>{patientDetails.patient.phone || 'Not provided'}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="font-semibold">Address:</p>

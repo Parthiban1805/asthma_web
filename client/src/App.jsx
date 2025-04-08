@@ -11,9 +11,11 @@ import PatientDashboard from "./components/Patient/patientDashboard";
 import AdminDasboard from './components/Admin/Admindashboard'
 import PatientDetails from './components/Admin/PatientDetails'
 import DoctorDetails from './components/Admin/DoctorDetails'
-import VideoCall from "./components/doctor/videocall";  // Import VideoCall component
-import PatientVideoCall from './components/Patient/Patientvideocall'
 import CaretakerDashboard from "./components/caretaker/caretaker";
+import VideoCall from "./components/video/videocall";  
+import PatientVideoCall from "./components/Patient/Patientvideocall";
+
+import CaretakerDetail from "./components/Admin/CaretakerDetail ";
 function App() {
   return (
     <Router>
@@ -29,9 +31,10 @@ function App() {
         <Route path="/admin-dashboard" element={<AdminDasboard/>} />
         <Route path="/admin-patient/:id" element={<PatientDetails/>} />
         <Route path="/admin-doctor/:id" element={<DoctorDetails/>} />
-        <Route path="/video-call" element={<VideoCall />} />
-        <Route path="/patient-video-call" element={<PatientVideoCall />} />
         <Route path="/caretaker-dashboard" element={<CaretakerDashboard />} />
+        <Route path="/admin-caretaker/:id" element={<CaretakerDetail/>} />
+        <Route path="/video-call/:roomID" element={<VideoCall />} />
+        <Route path="/patient-video-call/:roomID" element={<PatientVideoCall />} />
 
         <Route path="/" element={<Login />} />
       </Routes>

@@ -118,7 +118,27 @@ router.delete('/caretakers/:caretakerId/patient/:patientId', async (req, res) =>
     res.status(500).json({ message: 'Failed to remove caretaker', error: err.message });
   }
 });
-
+// Search for a patient by patientId
+router.get('/search-patient/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+  console.log(`Searching for patient with ID: ${patientId}`);
+  
+  try {
+    // Find the patient by patientId
+    const patient = await Patient.findOne({ patientId });
+    
+    if (!patient) {
+      console.log('Patient not found');
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+    
+    console.log('Patient found:', patient);
+    res.json(patient);
+  } catch (error) {
+    console.error('Error searching for patient:', error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // 1. Get all unassigned patients
 router.get('/unassigned-patients', async (req, res) => {

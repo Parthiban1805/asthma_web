@@ -55,7 +55,6 @@ router.post('/patient-appointments',  async (req, res) => {
       duration: duration || 30, // Default to 30 minutes if not specified
       purpose,
       notes,
-      status: 'Pending' // Initial status is pending
     });
     
     await newAppointment.save();

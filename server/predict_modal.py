@@ -19,7 +19,7 @@ columns = ['Age', 'Gender', 'Ethnicity', 'EducationLevel', 'BMI', 'Smoking', 'Ph
            'ShortnessOfBreath', 'ChestTightness', 'Coughing', 'NighttimeSymptoms', 'ExerciseInduced']
 
 df = pd.DataFrame([input_data], columns=columns)
-
+print(df)
 # Apply label encoding if required (here we assume Ethnicity & EducationLevel are encoded already)
 for col in ['Gender', 'Ethnicity', 'EducationLevel']:
     if col in label_encoders:
