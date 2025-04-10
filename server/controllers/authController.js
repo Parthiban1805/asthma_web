@@ -49,6 +49,7 @@ exports.register = async (req, res) => {
       const newPatient = new Patient({
         patientId: req.body.patientId || `PAT-${Date.now().toString().slice(-6)}`,
         doctorId: req.body.doctorId || '',
+        emergencyContact:req.body.emergencyContact,
         name: username,
         email,
         phone,

@@ -73,6 +73,14 @@ Please take immediate action.
         html: emailHtml
       }));
     }
+    if (patient.emergencyContact && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patient.emergencyContact)) {
+      emailPromises.push(sendEmailNotification({
+        recipient: patient.emergencyContact,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml
+      }));
+    }
 
     // Notify admin
     emailPromises.push(sendEmailNotification({

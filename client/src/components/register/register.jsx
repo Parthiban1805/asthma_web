@@ -281,8 +281,7 @@ const Register = () => {
                   <label htmlFor="emergencyContact" className="block text-sm font-medium text-gray-700">Emergency Contact (optional)</label>
                   <input
                     id="emergencyContact"
-                    type="tel"
-                    placeholder="555-123-4567"
+                    type="email"
                     value={emergencyContact}
                     onChange={(e) => setEmergencyContact(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
