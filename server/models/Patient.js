@@ -11,6 +11,7 @@ const patientSchema = new mongoose.Schema({
   address: String,
   medicalHistory: String,
   bmi: Number,
+  phone: { type:Number },
 
   // Doctor-side inputs
   petAllergy: { type: Number, default: 0 },

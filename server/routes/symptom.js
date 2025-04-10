@@ -27,22 +27,25 @@ router.post('/symptoms', async (req, res) => {
       wheezing, 
       nighttimeSymptoms, 
       exercise, 
-      notes 
+      notes,
+      smoking,
+      pollutionExposure,
+      pollenExposure,
+      dustExposure,
+      physicalActivity,
+      petExposure
     } = req.body;
-    console.log(req.body)
-    // Calculate severity based on number of symptoms
+
+    // Calculate severity based on symptom presence
     const symptomCount = [coughing, chestTightness, shortnessOfBreath, wheezing, nighttimeSymptoms].filter(Boolean).length;
     let severity = 'Mild';
-    
-    if (symptomCount >= 4) {
-      severity = 'Severe';
-    } else if (symptomCount >= 2) {
-      severity = 'Moderate';
-    }
-    
-    const newSymptom = new Symptom({
-      patientId, // <-- add this line
 
+    if (symptomCount >= 4) severity = 'Severe';
+    else if (symptomCount >= 2) severity = 'Moderate';
+
+    // Save main symptoms in Symptom collection
+    const newSymptom = new Symptom({
+      patientId,
       coughing,
       chestTightness,
       shortnessOfBreath,
@@ -52,24 +55,49 @@ router.post('/symptoms', async (req, res) => {
       notes,
       severity
     });
-    
-    const symptom = await newSymptom.save();
-    
-    // Check if this is exercise-induced and there's a history
+
+    const savedSymptom = await newSymptom.save();
+
+    // Update trigger-related data in Patient schema
+    await Patient.findOneAndUpdate(
+      { patientId },
+      {
+        $set: {
+          smoking,
+          pollutionExposure,
+          pollenExposure,
+          dustExposure,
+          physicalActivity,
+          petExposure,
+          // Optionally update the 6 symptoms too for real-time patient overview
+          coughing,
+          chestTightness,
+          shortnessOfBreath,
+          wheezing,
+          nighttimeSymptoms,
+          exercise
+        }
+      },
+      { new: true }
+    );
+
+    // Optional: Alert if exercise-induced symptoms are detected and history exists
     if (exercise) {
-      const patient = await Patient.find({patientId:patientId});
-      if (patient && patient.exerciseInduced) {
-        // Could trigger notification to do0ctor here
+      const patient = await Patient.findOne({ patientId });
+      if (patient?.exerciseInduced) {
         console.log('Exercise-induced symptoms detected for patient with history');
+        // Trigger doctor notification logic here (if needed)
       }
     }
-    
-    res.json(symptom);
+
+    res.json(savedSymptom);
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
+
 
 // Delete symptom record
 router.delete('/symptoms/:id', async (req, res) => {

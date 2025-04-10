@@ -91,33 +91,24 @@ router.put('/caretakers/:id', async (req, res) => {
 });
 
 // Remove a caretaker from a patient
-router.delete('/caretakers/:caretakerId/patient/:patientId', async (req, res) => {
+// Delete the caretaker entirely
+router.delete('/admin/caretakers/:caretakerId', async (req, res) => {
   try {
-    const { caretakerId, patientId } = req.params;
-    
-    // Remove patient from caretaker's patients array
-    const caretaker = await Caretaker.findById(caretakerId);
-    if (!caretaker) {
+    const { caretakerId } = req.params;
+
+    const deletedCaretaker = await Caretaker.findByIdAndDelete(caretakerId);
+
+    if (!deletedCaretaker) {
       return res.status(404).json({ message: 'Caretaker not found' });
     }
-    
-    caretaker.patients = caretaker.patients.filter(id => id.toString() !== patientId);
-    caretaker.updatedAt = Date.now();
-    await caretaker.save();
-    
-    // Remove caretaker from patient's caretakers array
-    const patient = await Patient.findById(patientId);
-    if (patient) {
-      patient.caretakers = patient.caretakers.filter(id => id.toString() !== caretakerId);
-      await patient.save();
-    }
-    
-    res.status(200).json({ message: 'Caretaker successfully removed from patient' });
+
+    res.status(200).json({ message: 'Caretaker deleted successfully' });
   } catch (err) {
-    console.error('Error removing caretaker from patient:', err);
-    res.status(500).json({ message: 'Failed to remove caretaker', error: err.message });
+    console.error('Error deleting caretaker:', err);
+    res.status(500).json({ message: 'Failed to delete caretaker', error: err.message });
   }
 });
+
 // Search for a patient by patientId
 router.get('/search-patient/:patientId', async (req, res) => {
   const { patientId } = req.params;

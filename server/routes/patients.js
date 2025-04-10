@@ -109,7 +109,7 @@ router.get('/patients/:id', async (req, res) => {
       if (req.body.patientId) {
         const existing = await Patient.findOne({
           patientId: req.body.patientId,
-          _id: { $ne: req.body._id } // This might still be sus, double check
+          _id: { $ne: patientId } // Use the ID from the URL
         });
   
         if (existing) {
@@ -118,7 +118,7 @@ router.get('/patients/:id', async (req, res) => {
       }
   
       const updated = await Patient.findOneAndUpdate(
-        { patientId },
+        { _id: patientId }, // use _id for updating, not patientId
         req.body,
         { new: true, runValidators: true }
       );
@@ -133,6 +133,7 @@ router.get('/patients/:id', async (req, res) => {
       res.status(500).json({ message: 'Server error', error: err.message });
     }
   });
+  
   router.put('/doctor/patients/:id', async (req, res) => {
     try {
       const updatedPatient = await Patient.findByIdAndUpdate(

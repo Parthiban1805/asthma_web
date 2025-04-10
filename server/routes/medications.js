@@ -13,6 +13,15 @@ router.get('/medications', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+router.post('/medications', async (req, res) => {
+  try {
+    const newMed = new Medication(req.body);
+    const savedMed = await newMed.save();
+    res.status(201).json(savedMed);
+  } catch (error) {
+    res.status(400).json({ message: 'Error adding medication' });
+  }
+});
 
 // Get one medication
 router.get('/medications/:id', async (req, res) => {

@@ -201,20 +201,20 @@ const PatientDashboard = () => {
             ...newSymptom,
             patientId,
             smoking: newSymptom.smoking ? 1 : 0,
-          
-            // convert all number fields properly
-            coughing: Number(newSymptom.coughing),
-            chestTightness: Number(newSymptom.chestTightness),
-            shortnessOfBreath: Number(newSymptom.shortnessOfBreath),
-            wheezing: Number(newSymptom.wheezing),
-            nighttimeSymptoms: Number(newSymptom.nighttimeSymptoms),
-            exercise: Number(newSymptom.exercise),
+            coughing: newSymptom.coughing ? 1 : 0,
+            chestTightness: newSymptom.chestTightness ? 1 : 0,
+            shortnessOfBreath: newSymptom.shortnessOfBreath ? 1 : 0,
+            wheezing: newSymptom.wheezing ? 1 : 0,
+            nighttimeSymptoms: newSymptom.nighttimeSymptoms ? 1 : 0,
+            exercise: newSymptom.exercise ? 1 : 0,
+            // Keep the rest as numbers
             pollutionExposure: Number(newSymptom.pollutionExposure),
             pollenExposure: Number(newSymptom.pollenExposure),
             dustExposure: Number(newSymptom.dustExposure),
             physicalActivity: Number(newSymptom.physicalActivity),
-            petExposure: Number(newSymptom.petExposure)
+            petExposure: Number(newSymptom.petExposure),
           };
+          
           
         console.log(symptomData)
           const response = await axios.post('http://localhost:5000/api/symptoms', symptomData);
@@ -850,78 +850,78 @@ const formatTimePeriod = (period) => {
  <h3 className="font-medium mb-3 text-green-700">Record New Symptoms</h3>
 
  <div className="grid md:grid-cols-2 gap-6 mb-4">
-   {/* Symptom Severity Number Inputs */}
-   <div>
-     <h4 className="font-medium mb-3 text-green-700">Symptom Severity (0-10)</h4>
+  {/* Symptom Checkboxes */}
+  <div>
+    <h4 className="font-medium mb-3 text-green-700">Symptom Checklist</h4>
 
-     {[
-       ['coughing', 'Coughing'],
-       ['chestTightness', 'Chest Tightness'],
-       ['shortnessOfBreath', 'Shortness of Breath'],
-       ['wheezing', 'Wheezing'],
-       ['nighttimeSymptoms', 'Nighttime Symptoms'],
-       ['exercise', 'Exercise-Related'],
-     ].map(([key, label]) => (
-       <div className="mb-3" key={key}>
-         <label htmlFor={key} className="block mb-1">{label}:</label>
-         <input
-           type="number"
-           id={key}
-           name={key}
-           min="0"
-           max="10"
-           value={newSymptom[key]}
-           onChange={handleSymptomChange}
-           className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-         />
-         {key === 'exercise' && newSymptom.exercise > 0 && patient.exerciseInduced && (
-           <span className="text-sm text-orange-600">
-             * Previous history of exercise-induced symptoms detected
-           </span>
-         )}
-       </div>
-     ))}
-   </div>
+    {[
+      ['coughing', 'Coughing'],
+      ['chestTightness', 'Chest Tightness'],
+      ['shortnessOfBreath', 'Shortness of Breath'],
+      ['wheezing', 'Wheezing'],
+      ['nighttimeSymptoms', 'Nighttime Symptoms'],
+      ['exercise', 'Exercise-Related'],
+    ].map(([key, label]) => (
+      <div className="flex items-center mb-3" key={key}>
+        <input
+          type="checkbox"
+          id={key}
+          name={key}
+          checked={newSymptom[key]}
+          onChange={handleSymptomChange}
+          className="h-4 w-4 mr-2 text-green-600"
+        />
+        <label htmlFor={key}>{label}</label>
+        {key === 'exercise' && newSymptom.exercise && patient.exerciseInduced && (
+          <span className="ml-2 text-sm text-orange-600">
+            * Previous history of exercise-induced symptoms detected
+          </span>
+        )}
+      </div>
+    ))}
+  </div>
 
-   {/* Triggers Section */}
-   <div>
-     <h4 className="font-medium mb-3 text-green-700">Triggers</h4>
+  {/* Triggers Section – already checkbox + number fields, no change */}
+  <div>
+    <h4 className="font-medium mb-3 text-green-700">Triggers</h4>
 
-     <div className="flex items-center mb-3">
-       <input
-         type="checkbox"
-         id="smoking"
-         name="smoking"
-         checked={newSymptom.smoking}
-         onChange={handleSymptomChange}
-         className="h-4 w-4 mr-2 text-green-600"
-       />
-       <label htmlFor="smoking">Smoking</label>
-     </div>
+    <div className="flex items-center mb-3">
+      <input
+        type="checkbox"
+        id="smoking"
+        name="smoking"
+        checked={newSymptom.smoking}
+        onChange={handleSymptomChange}
+        className="h-4 w-4 mr-2 text-green-600"
+      />
+      <label htmlFor="smoking">Smoking</label>
+    </div>
 
-     {[
-       ['pollutionExposure', 'Pollution Exposure'],
-       ['pollenExposure', 'Pollen Exposure'],
-       ['dustExposure', 'Dust Exposure'],
-       ['physicalActivity', 'Physical Activity Level'],
-       ['petExposure', 'Pet Exposure'],
-     ].map(([key, label]) => (
-       <div className="mb-3" key={key}>
-         <label htmlFor={key} className="block mb-1">{label}:</label>
-         <input
-           type="number"
-           id={key}
-           name={key}
-           min="0"
-           max="10"
-           value={newSymptom[key]}
-           onChange={handleSymptomChange}
-           className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-         />
-       </div>
-     ))}
-   </div>
- </div>
+    {[
+      ['pollutionExposure', 'Pollution Exposure'],
+      ['pollenExposure', 'Pollen Exposure'],
+      ['dustExposure', 'Dust Exposure'],
+      ['physicalActivity', 'Physical Activity Level'],
+      ['petExposure', 'Pet Exposure'],
+    ].map(([key, label]) => (
+      <div className="mb-3" key={key}>
+        <label htmlFor={key} className="block mb-1">{label}:</label>
+        <input
+  type="number"
+  id={key}
+  name={key}
+  step="0.0000000001" // allows up to 10 decimal places
+  min="0"
+  max="10"
+  value={newSymptom[key]}
+  onChange={handleSymptomChange}
+  className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+/>
+      </div>
+    ))}
+  </div>
+</div>
+
 
  <div className="mb-4">
    <label htmlFor="notes" className="block mb-1 text-green-700">Notes:</label>

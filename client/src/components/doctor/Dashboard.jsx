@@ -194,7 +194,6 @@ const Dashboard = ({ doctor: initialDoctor }) => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -203,9 +202,6 @@ const Dashboard = ({ doctor: initialDoctor }) => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {recentAppointments.map((appointment, index) => (
                         <tr key={appointment.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{appointment.patientName}</div>
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                             {new Date(appointment.dateTime).toLocaleString()}
                           </td>

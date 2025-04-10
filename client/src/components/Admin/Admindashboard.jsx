@@ -77,6 +77,7 @@ const Dashboard = () => {
     e.stopPropagation(); // Prevent row click event
     if (window.confirm('Are you sure you want to delete this caretaker?')) {
       try {
+
         await axios.delete(`http://localhost:5000/api/admin/caretakers/${caretakerId}`);
         setCaretakers(caretakers.filter(caretaker => caretaker._id !== caretakerId));
       } catch (error) {
