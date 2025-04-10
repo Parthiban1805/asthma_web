@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
 const patientQuerySchema = new mongoose.Schema({
-  patientId: { type: String }, // Change from ObjectId to String
+  patientId: { type: String }, 
+  doctorId: { type: String }, // Change from ObjectId to String
+  caretakerId: { type: String }, 
   subject: {
     type: String,
     required: true

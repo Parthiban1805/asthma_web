@@ -7,7 +7,7 @@ const Appointment = require('../models/Appointment');
 const Caretaker = require('../models/Caretaker');
 const Prescription = require('../models/Medication');
 const Symptom = require('../models/Symptom');
-
+const PatientQuery=require('../models/patientQuery')
 
 router.get('/admin/patients', async (req, res) => {
   try {
@@ -17,7 +17,24 @@ router.get('/admin/patients', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+// In your admin routes file
+router.get('/admin/queries', async (req, res) => {
+  try {
+    const queries = await PatientQuery.find();
+    res.json(queries);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
+router.delete('/admin/queries/:id', async (req, res) => {
+  try {
+    await PatientQuery.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Query deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 // Get patient details by ID
 router.get('/admin/patients/:id', async (req, res) => {
   try {

@@ -45,14 +45,76 @@ router.get('/patient-medications/:id', async (req, res) => {
   }
 });
 
-// Add new medication
-router.post('/medications', async (req, res) => {
+
+router.get('/prescriptions/:patientId', async (req, res) => {
   try {
-    const newMed = new Medication(req.body);
-    const savedMed = await newMed.save();
-    res.status(201).json(savedMed);
+    const { patientId } = req.params;
+    
+    const prescriptions = await Prescription.find({
+      patientId: patientId
+    }).sort({ status: 1, startDate: -1 });
+    
+    res.status(200).json(prescriptions);
   } catch (error) {
-    res.status(400).json({ message: 'Error adding medication' });
+    console.error('Error fetching prescriptions:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update medication intake status
+router.post('/medications/intake/update', async (req, res) => {
+  try {
+    const { patientId, timeOfDay, status } = req.body;
+    
+    if (!patientId || !timeOfDay || status === undefined) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    
+    // Validate timeOfDay is one of the expected values
+    if (!['morning', 'evening', 'night'].includes(timeOfDay)) {
+      return res.status(400).json({ message: 'Invalid timeOfDay value' });
+    }
+    
+    // Create update object with the specific time of day to update
+    const updateData = {};
+    updateData[`medicationIntake.${timeOfDay}`] = status;
+    
+    // Update the patient document
+    const updatedPatient = await Patient.findOneAndUpdate(
+      { patientId : patientId },
+      { $set: updateData },
+      { new: true } // Return the updated document
+    );
+    
+    if (!updatedPatient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+    
+    res.status(200).json({
+      message: 'Medication intake updated successfully',
+      medicationIntake: updatedPatient.medicationIntake
+    });
+    
+  } catch (error) {
+    console.error('Error updating medication intake:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Add endpoint to get a specific patient with medication intake status
+router.get('/patients/:patientId', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+    
+    res.status(200).json(patient);
+  } catch (error) {
+    console.error('Error fetching patient:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

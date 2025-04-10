@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const PatientDashboard = () => {
     const [patient, setPatient] = useState(null);
@@ -49,7 +50,12 @@ const PatientDashboard = () => {
       purpose: '',
       notes: '',
     });
-    
+    const [intakeStatus, setIntakeStatus] = useState({
+      morning: 0,
+      evening: 0,
+      night: 0
+    });
+  
     const navigate = useNavigate();
     
     useEffect(() => {
@@ -86,6 +92,11 @@ const PatientDashboard = () => {
             // Fetch prescriptions
             const prescriptionsResponse = await axios.get(`http://localhost:5000/api/patient-medications/${patientId}`);
             setPrescriptions(prescriptionsResponse.data || []);
+            const patientRes = await axios.get(`http://localhost:5000/api/patients/${patientId}`);
+            if (patientRes.data.medicationIntake) {
+              setIntakeStatus(patientRes.data.medicationIntake);
+            }
+    
           } catch (err) {
             console.error("Error fetching prescriptions:", err);
             setPrescriptions([]);
@@ -375,6 +386,47 @@ const submitQuery = async (e) => {
     alert('Failed to submit query');
   }
 };
+const handleMedicationTaken = async (timeOfDay) => {
+  try {
+    // Toggle the current status (0 -> 1 or 1 -> 0)
+    const newStatus = intakeStatus[timeOfDay] === 1 ? 0 : 1;
+    const user = JSON.parse(localStorage.getItem('user'));
+    const patientId = user.patientId;
+
+    const response = await axios.post('http://localhost:5000/api/medications/intake/update', {
+      patientId,
+      timeOfDay,
+      status: newStatus
+    });
+    
+    // Update local state with the response
+    setIntakeStatus(response.data.medicationIntake);
+    
+    toast.success(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} medication marked as ${newStatus === 1 ? 'taken' : 'not taken'}`);
+  } catch (error) {
+    console.error("Error updating medication status:", error);
+    toast.error("Failed to update medication status");
+  }
+};
+
+// Get current time period (morning, evening, night)
+const getCurrentTimePeriod = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'evening';
+  return 'night';
+};
+
+// Check if a prescription should be taken at a specific time
+const shouldTakeAtTime = (prescription, timeOfDay) => {
+  return prescription.timeOfDay && prescription.timeOfDay[timeOfDay];
+};
+
+// Format a time period name
+const formatTimePeriod = (period) => {
+  return period.charAt(0).toUpperCase() + period.slice(1);
+};
+
 
 
     if (loading) return (
@@ -696,44 +748,89 @@ const submitQuery = async (e) => {
         </div>
         
         {/* Prescriptions */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
-          <h2 className="text-2xl font-semibold mb-4 text-blue-700">My Medications</h2>
-          {prescriptions.length > 0 ? (
-            <div className="overflow-x-auto bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-md">
-              <table className="w-full text-sm">
-                <thead className="bg-blue-100">
-                  <tr>
-                    <th className="p-3 text-left text-blue-800">Medication</th>
-                    <th className="p-3 text-left text-blue-800">Dosage</th>
-                    <th className="p-3 text-left text-blue-800">Frequency</th>
-                    <th className="p-3 text-left text-blue-800">Start Date</th>
-                    <th className="p-3 text-left text-blue-800">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prescriptions.map((prescription, index) => (
-                    <tr key={prescription._id} className={index % 2 === 0 ? "bg-white" : "bg-blue-50"}>
-                      <td className="p-3 border-t border-blue-100">{prescription.medicationName}</td>
-                      <td className="p-3 border-t border-blue-100">{prescription.dosage}</td>
-                      <td className="p-3 border-t border-blue-100">{prescription.frequency}</td>
-                      <td className="p-3 border-t border-blue-100">{new Date(prescription.startDate).toLocaleDateString()}</td>
-                      <td className="p-3 border-t border-blue-100">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          prescription.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {prescription.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
+            <h2 className="text-2xl font-semibold mb-4 text-purple-700">Medication Tracker</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {['morning', 'evening', 'night'].map((period) => (
+                <div 
+                  key={period} 
+                  className={`p-4 rounded-lg border ${
+                    getCurrentTimePeriod() === period ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium text-lg">{formatTimePeriod(period)}</h3>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      intakeStatus[period] === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {intakeStatus[period] === 1 ? 'Taken' : 'Not Taken'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleMedicationTaken(period)}
+                    className={`w-full py-2 px-4 rounded-md mt-2 transition-colors ${
+                      intakeStatus[period] === 1 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {intakeStatus[period] === 1 ? 'Undo' : 'Mark as Taken'}
+                  </button>
+                </div>
+              ))}
             </div>
-          ) : (
-            <p className="bg-blue-50 p-4 rounded-md text-blue-800">No medications assigned yet</p>
-          )}
-        </div>
-        
+          </div>
+
+          {/* Prescriptions */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+            <h2 className="text-2xl font-semibold mb-4 text-blue-700">My Medications</h2>
+            {prescriptions.length > 0 ? (
+              <div className="overflow-x-auto bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-md">
+                <table className="w-full text-sm">
+                  <thead className="bg-blue-100">
+                    <tr>
+                      <th className="p-3 text-left text-blue-800">Medication</th>
+                      <th className="p-3 text-left text-blue-800">Dosage</th>
+                      <th className="p-3 text-left text-blue-800">Frequency</th>
+                      <th className="p-3 text-left text-blue-800">Start Date</th>
+                      <th className="p-3 text-left text-blue-800">Status</th>
+                      <th className="p-3 text-left text-blue-800">Time of Day</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prescriptions.map((prescription, index) => (
+                      <tr key={prescription._id} className={index % 2 === 0 ? "bg-white" : "bg-blue-50"}>
+                        <td className="p-3 border-t border-blue-100">{prescription.medicationName}</td>
+                        <td className="p-3 border-t border-blue-100">{prescription.dosage}</td>
+                        <td className="p-3 border-t border-blue-100">{prescription.frequency}</td>
+                        <td className="p-3 border-t border-blue-100">{new Date(prescription.startDate).toLocaleDateString()}</td>
+                        <td className="p-3 border-t border-blue-100">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            prescription.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {prescription.status}
+                          </span>
+                        </td>
+                        <td className="p-3 border-t border-blue-100">
+                          <div className="flex space-x-2">
+                            {['morning', 'evening', 'night'].map((time) => (
+                              shouldTakeAtTime(prescription, time) && (
+                                <span key={time} className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                                  {formatTimePeriod(time)}
+                                </span>
+                              )
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="bg-blue-50 p-4 rounded-md text-blue-800">No medications assigned yet</p>
+            )}
+          </div>        
         {/* Symptom Tracking */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
           <div className="flex justify-between items-center mb-4">

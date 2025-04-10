@@ -7,119 +7,134 @@ const router = express.Router();
 const Doctor = require('../models/Doctor');
 const Caretaker = require('../models/Caretaker');
 const sendEmail = require('../utils/sendEmail');
+const path = require('path');
 
 router.post('/predict-asthma', async (req, res) => {
   const { patientId } = req.body;
+  console.log("📥 Received request to predict asthma for patientId:", patientId);
 
   try {
     // 1. Fetch patient data
     const patient = await Patient.findOne({ patientId });
-    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    console.log("🩺 Fetched patient record:", patient);
+
+    if (!patient) {
+      console.error("❌ Patient not found for ID:", patientId);
+      return res.status(404).json({ error: 'Patient not found' });
+    }
 
     // 2. Fetch latest symptom data
     const symptom = await Symptom.findOne({ patientId }).sort({ date: -1 });
-    if (!symptom) return res.status(404).json({ error: 'No symptom data found' });
+    console.log("🧾 Fetched latest symptom record:", symptom);
 
-    // 3. Prepare the final input in model's format
-    const patientData = [
-      patient.age,
-      patient.gender === 'Male' ? 1 : 0,          // Gender (encoded)
-      patient.ethnicity || 0,                     // Make sure encoded or mapped properly
-      patient.educationLevel || 0,                // Same
-      patient.bmi,
-      patient.smoking,
-      patient.physicalActivity,
-      patient.dietQuality || 5,                   // Assuming scale 0-10, use default if missing
-      patient.sleepQuality || 5,
-      patient.pollutionExposure,
-      patient.pollenExposure,
-      patient.dustExposure,
-      patient.petAllergy,
-      patient.familyHistoryAsthma,
-      patient.historyOfAllergies,
-      patient.eczema || 0,
-      patient.hayfever,
-      patient.gastroesophagealReflux,
-      patient.lungFunctionFEV1,
-      patient.lungFunctionFVC,
-      symptom.wheezing,
-      symptom.shortnessOfBreath,
-      symptom.chestTightness,
-      symptom.coughing,
-      symptom.nighttimeSymptoms,
-      patient.exerciseInduced || symptom.exercise
-    ]
-    const patientDataWithKeys = {
-      age: patient.age,
-      gender: patient.gender === 'Male' ? 1 : 0,
-      ethnicity: patient.ethnicity || 0,
-      educationLevel: patient.educationLevel || 0,
-      bmi: patient.bmi,
-      smoking: patient.smoking,
-      physicalActivity: patient.physicalActivity,
-      dietQuality: patient.dietQuality || 5,
-      sleepQuality: patient.sleepQuality || 5,
-      pollutionExposure: patient.pollutionExposure,
-      pollenExposure: patient.pollenExposure,
-      dustExposure: patient.dustExposure,
-      petAllergy: patient.petAllergy,
-      familyHistoryAsthma: patient.familyHistoryAsthma,
-      historyOfAllergies: patient.historyOfAllergies,
-      eczema: patient.eczema || 0,
-      hayfever: patient.hayfever,
-      gastroesophagealReflux: patient.gastroesophagealReflux,
-      lungFunctionFEV1: patient.lungFunctionFEV1,
-      lungFunctionFVC: patient.lungFunctionFVC,
-      wheezing: symptom.wheezing,
-      shortnessOfBreath: symptom.shortnessOfBreath,
-      chestTightness: symptom.chestTightness,
-      coughing: symptom.coughing,
-      nighttimeSymptoms: symptom.nighttimeSymptoms,
-      exerciseInduced: patient.exerciseInduced || symptom.exercise,
+    if (!symptom) {
+      console.error("❌ No symptom data found for patient ID:", patientId);
+      return res.status(404).json({ error: 'No symptom data found' });
+    }
+
+    // 3. Prepare the final input in model's format with capitalized keys to match Python column names
+    const patientData = {
+      Age: patient.age,
+      Gender: patient.gender === 'Male' ? 1 : 0,
+      Ethnicity: patient.ethnicity || 0,
+      EducationLevel: patient.educationLevel || 0,
+      BMI: patient.bmi,
+      Smoking: patient.smoking,
+      PhysicalActivity: patient.physicalActivity,
+      DietQuality: patient.dietQuality || 5,
+      SleepQuality: patient.sleepQuality || 5,
+      PollutionExposure: patient.pollutionExposure,
+      PollenExposure: patient.pollenExposure,
+      DustExposure: patient.dustExposure,
+      PetAllergy: patient.petAllergy,
+      FamilyHistoryAsthma: patient.familyHistoryAsthma,
+      HistoryOfAllergies: patient.historyOfAllergies,
+      Eczema: patient.eczema || 0,
+      HayFever: patient.hayfever,
+      GastroesophagealReflux: patient.gastroesophagealReflux,
+      LungFunctionFEV1: patient.lungFunctionFEV1,
+      LungFunctionFVC: patient.lungFunctionFVC,
+      Wheezing: symptom.wheezing,
+      ShortnessOfBreath: symptom.shortnessOfBreath,
+      ChestTightness: symptom.chestTightness,
+      Coughing: symptom.coughing,
+      NighttimeSymptoms: symptom.nighttimeSymptoms,
+      ExerciseInduced: patient.exerciseInduced || symptom.exercise,
     };
-    
-    console.log("🧾 Final patient data for prediction:", patientDataWithKeys);
-    
-    console.log(patientData)
-    // 4. Call Python script
-    const python = spawn('python', ['predict_modal.py', JSON.stringify(patientData)]);
+
+    console.log("✅ Final patient data object:", patientData);
+
+    // 4. Call Python script with proper path
+    const pythonScriptPath = path.join(__dirname, '..', 'predict_modal.py');
+    const python = spawn('python', [pythonScriptPath, JSON.stringify(patientData)]);
 
     let result = '';
+    let pythonError = '';
+
     python.stdout.on('data', (data) => {
+      console.log("🐍 Python stdout:", data.toString());
       result += data.toString();
     });
 
     python.stderr.on('data', (data) => {
-      console.error('Python stderr:', data.toString());
+      console.error("🐍 Python stderr:", data.toString());
+      pythonError += data.toString();
+    });
+
+    python.on('error', (error) => {
+      console.error("❌ Failed to start Python process:", error);
+      return res.status(500).json({ error: 'Failed to start prediction model' });
     });
 
     python.on('close', async (code) => {
-      const [prediction, probability] = result.trim().split(',');
-
-      if (prediction === 'Asthma') {
-        // Fetch doctor email
-        const doctor = await Doctor.findOne({ doctorId: patient.doctorId });
-
-        // Fetch caretaker by checking if this patient ObjectId is in any caretaker's patients array
-        const caretaker = await Caretaker.findOne({ patients: patient._id });
-
-        const subject = `⚠️ Asthma Alert: ${patient.name}`;
-        const text = `Prediction: Asthma\nProbability: ${(parseFloat(probability) * 100).toFixed(2)}%\n\nPlease review the patient's case.`
-
-        if (doctor) await sendEmail({ to: doctor.email, subject, text });
-        if (caretaker) await sendEmail({ to: caretaker.email, subject, text });
+      console.log("🚪 Python process closed with code:", code);
+      
+      if (code !== 0) {
+        console.error("❌ Python process exited with code:", code);
+        return res.status(500).json({ error: 'Prediction model failed', details: pythonError });
       }
 
-      res.json({ prediction, probability });
-    });
+      console.log("📊 Raw result from Python:", result.trim());
 
+      try {
+        const [prediction, probability] = result.trim().split(',');
+        console.log("✅ Prediction:", prediction);
+        console.log("📈 Probability:", probability);
 
-    python.stderr.on('data', (err) => {
-      console.error('Python error:', err.toString());
+        if (prediction === 'Asthma') {
+          try {
+            const doctor = await Doctor.findOne({ doctorId: patient.doctorId });
+            const caretaker = await Caretaker.findOne({ patients: patient._id });
+
+            console.log("📬 Doctor info:", doctor);
+            console.log("📬 Caretaker info:", caretaker);
+
+            const subject = `⚠️ Asthma Alert: ${patient.name}`;
+            const text = `Prediction: Asthma\nProbability: ${(parseFloat(probability) * 100).toFixed(2)}%\n\nPlease review the patient's case.`;
+
+            if (doctor) {
+              await sendEmail({ to: doctor.email, subject, text });
+              console.log("📧 Email sent to doctor:", doctor.email);
+            }
+            if (caretaker) {
+              await sendEmail({ to: caretaker.email, subject, text });
+              console.log("📧 Email sent to caretaker:", caretaker.email);
+            }
+          } catch (emailErr) {
+            console.error("❌ Error sending email notifications:", emailErr);
+            // Continue execution - don't fail the request if just notifications fail
+          }
+        }
+
+        res.json({ prediction, probability: parseFloat(probability) });
+      } catch (parseErr) {
+        console.error("❌ Error parsing Python result:", parseErr);
+        res.status(500).json({ error: 'Error parsing prediction result', details: result });
+      }
     });
 
   } catch (err) {
-    console.error('Server error:', err);
+    console.error("❗ Server error:", err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

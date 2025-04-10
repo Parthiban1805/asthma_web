@@ -6,8 +6,11 @@ const Dashboard = () => {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [caretakers, setCaretakers] = useState([]);
+  const [queries, setQueries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  const [queryType, setQueryType] = useState('all'); // 'all', 'patient', 'doctor'
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,15 +19,17 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [patientsRes, doctorsRes, caretakersRes] = await Promise.all([
+      const [patientsRes, doctorsRes, caretakersRes, queriesRes] = await Promise.all([
         axios.get('http://localhost:5000/api/admin/patients'),
         axios.get('http://localhost:5000/api/admin/doctors'),
-        axios.get('http://localhost:5000/api/admin/caretakers')
+        axios.get('http://localhost:5000/api/admin/caretakers'),
+        axios.get('http://localhost:5000/api/admin/queries')
       ]);
       
       setPatients(patientsRes.data);
       setDoctors(doctorsRes.data);
       setCaretakers(caretakersRes.data);
+      setQueries(queriesRes.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -43,10 +48,6 @@ const Dashboard = () => {
   const handleCaretakerClick = (caretakerId) => {
     navigate(`/admin-caretaker/${caretakerId}`);
   };
-
-
-
-  
 
   const handleDeletePatient = async (e, patientId) => {
     e.stopPropagation(); // Prevent row click event
@@ -84,6 +85,72 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteQuery = async (e, queryId) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this query?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/queries/${queryId}`);
+        setQueries(queries.filter(query => query._id !== queryId));
+      } catch (error) {
+        console.error('Error deleting query:', error);
+      }
+    }
+  };
+
+  const handleViewQueryDetails = (queryId) => {
+    navigate(`/admin-query/${queryId}`);
+  };
+
+  const getFilteredQueries = () => {
+    let filteredQueries = [...queries];
+    
+    // Filter by query type
+    if (queryType === 'patient') {
+      filteredQueries = filteredQueries.filter(query => query.patientId && !query.doctorId);
+    } else if (queryType === 'doctor') {
+      filteredQueries = filteredQueries.filter(query => query.doctorId);
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filteredQueries = filteredQueries.filter(query => 
+        query.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        query.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (query.patientId && query.patientId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (query.doctorId && query.doctorId.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    return filteredQueries;
+  };
+
+  const getPriorityClass = (priority) => {
+    switch (priority) {
+      case 'High':
+        return 'bg-red-100 text-red-800';
+      case 'Normal':
+        return 'bg-blue-100 text-blue-800';
+      case 'Low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getQuerySourceName = (query) => {
+    if (query.patientId) {
+      const patient = patients.find(p => p.patientId === query.patientId);
+      return patient ? `Patient: ${patient.name}` : `Patient: ${query.patientId}`;
+    } else if (query.doctorId) {
+      const doctor = doctors.find(d => d.doctorId === query.doctorId);
+      return doctor ? `Doctor: ${doctor.name}` : `Doctor: ${query.doctorId}`;
+    } else if (query.caretakerId) {
+      const caretaker = caretakers.find(c => c._id === query.caretakerId);
+      return caretaker ? `Caretaker: ${caretaker.name}` : `Caretaker: ${query.caretakerId}`;
+    }
+    return 'Unknown';
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-full">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -95,7 +162,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-gray-800">Dashboard Overview</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {/* Card 1 - Total Patients */}
           <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 transition-all hover:shadow-lg">
             <div className="flex items-center pt-2">
@@ -147,28 +214,47 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+          
+          {/* Card 5 - Queries */}
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500 transition-all hover:shadow-lg">
+            <div className="flex items-center pt-2">
+              <div className="p-3 rounded-full bg-red-100 mr-4 flex items-center justify-center">
+                <span className="text-red-600 font-bold text-lg">❓</span>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 font-medium">Total Queries</div>
+                <div className="text-2xl font-bold text-gray-800">{queries.length}</div>
+              </div>
+            </div>
+          </div>
         </div>
         
         {/* Custom Tabs implementation */}
         <div className="bg-white rounded-lg shadow-md">
-          <div className="flex border-b px-4">
+          <div className="flex border-b px-4 overflow-x-auto">
             <button 
-              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors ${activeTab === 0 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors whitespace-nowrap ${activeTab === 0 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
               onClick={() => setActiveTab(0)}
             >
               Patients
             </button>
             <button 
-              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors ${activeTab === 1 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors whitespace-nowrap ${activeTab === 1 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
               onClick={() => setActiveTab(1)}
             >
               Doctors
             </button>
             <button 
-              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors ${activeTab === 2 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors whitespace-nowrap ${activeTab === 2 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
               onClick={() => setActiveTab(2)}
             >
               Caretakers
+            </button>
+            <button 
+              className={`px-6 py-4 focus:outline-none cursor-pointer font-medium transition-colors whitespace-nowrap ${activeTab === 3 ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+              onClick={() => setActiveTab(3)}
+            >
+              Queries
             </button>
           </div>
           
@@ -215,7 +301,6 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.dateOfBirth || (patient.age ? `${patient.age} yrs` : 'N/A')}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.phone}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            
                             <button 
                               className="text-red-600 hover:text-red-800"
                               onClick={(e) => handleDeletePatient(e, patient.patientId)}
@@ -268,7 +353,6 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doctor.name}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.specialization || 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                           
                             <button 
                               className="text-red-600 hover:text-red-800 mr-3"
                               onClick={(e) => handleDeleteDoctor(e, doctor.doctorId)}
@@ -324,7 +408,6 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caretaker.phone || 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caretaker.patients?.length || 0}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          
                             <button 
                               className="text-red-600 hover:text-red-800 mr-3"
                               onClick={(e) => handleDeleteCaretaker(e, caretaker._id)}
@@ -338,6 +421,92 @@ const Dashboard = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+            
+            {/* Queries Tab Panel */}
+            {activeTab === 3 && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800">Query List</h2>
+                  <div className="flex items-center space-x-4">
+                    {/* Toggle Buttons for Query Type */}
+                    <div className="bg-gray-100 p-1 rounded-lg flex">
+                      <button
+                        className={`px-3 py-1 rounded-md text-sm font-medium ${queryType === 'all' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+                        onClick={() => setQueryType('all')}
+                      >
+                        All Queries
+                      </button>
+                      <button
+                        className={`px-3 py-1 rounded-md text-sm font-medium ${queryType === 'patient' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+                        onClick={() => setQueryType('patient')}
+                      >
+                        Patient Queries
+                      </button>
+                      <button
+                        className={`px-3 py-1 rounded-md text-sm font-medium ${queryType === 'doctor' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+                        onClick={() => setQueryType('doctor')}
+                      >
+                        Doctor Queries
+                      </button>
+                    </div>
+                    
+                    {/* Search Input */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search queries..."
+                        className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                      <div className="absolute left-3 top-3 text-gray-400">
+                        🔍
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Queries Grid Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {getFilteredQueries().map((query) => (
+                    <div 
+                      key={query._id} 
+                      className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleViewQueryDetails(query._id)}
+                    >
+                      <div className="border-b bg-gray-50 px-4 py-3 flex justify-between items-center">
+                        <h3 className="font-medium text-gray-800">{query.subject}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityClass(query.priority)}`}>
+                          {query.priority}
+                        </span>
+                      </div>
+                      <div className="p-4">
+                        <div className="text-sm text-gray-600 mb-2">{getQuerySourceName(query)}</div>
+                        <p className="text-gray-800 line-clamp-3">{query.message}</p>
+                      </div>
+                      <div className="border-t px-4 py-2 bg-gray-50 flex justify-end">
+                        
+                        <button 
+                          className="text-sm text-red-600 hover:text-red-800"
+                          onClick={(e) => handleDeleteQuery(e, query._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Empty State */}
+                {getFilteredQueries().length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="text-5xl mb-4">📭</div>
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">No Queries Found</h3>
+                    <p className="text-gray-600">There are no queries matching your current filters.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

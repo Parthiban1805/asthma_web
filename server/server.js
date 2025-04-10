@@ -17,6 +17,7 @@ const caretakerRoute=require('./routes/caretaker')
 const asthmaRoute=require('./routes/asthma')
 const doctorRoute=require('./routes/doctor')
 const sendAppointmentReminders = require('./services/sendAppointmentReminders');
+const { checkMedicationIntake } = require('./routes/medicationReminder');
 
 dotenv.config();
 
@@ -54,12 +55,13 @@ mongoose.connect(process.env.MONGO_URI, {
 
   // Start checking for reminders immediately
   sendAppointmentReminders();
+  checkMedicationIntake();
 
   // Check for reminders every second
   setInterval(() => {
-    console.log(`\n[${new Date().toLocaleTimeString()}] Checking for upcoming appointments...`);
     sendAppointmentReminders();
   }, 1000);
+  checkMedicationIntake();
 
   // Start server
   app.listen(5000, () => {

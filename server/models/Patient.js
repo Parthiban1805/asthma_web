@@ -12,7 +12,7 @@ const patientSchema = new mongoose.Schema({
   medicalHistory: String,
   bmi: Number,
 
-  // Doctor-side inputs (converted from Boolean to Number)
+  // Doctor-side inputs
   petAllergy: { type: Number, default: 0 },
   familyHistoryAsthma: { type: Number, default: 0 },
   historyOfAllergies: { type: Number, default: 0 },
@@ -28,20 +28,27 @@ const patientSchema = new mongoose.Schema({
   shortnessOfBreath: { type: Number, default: 0 },
   wheezing: { type: Number, default: 0 },
   nighttimeSymptoms: { type: Number, default: 0 },
-  exercise: { type: Number, default: 0 }, // if yes, considered with exerciseInduced
+  exercise: { type: Number, default: 0 },
 
   // Patient-side inputs: Triggers
   smoking: { type: Number, default: 0 },
   pollutionExposure: { type: Number, default: 0 },
   pollenExposure: { type: Number, default: 0 },
   dustExposure: { type: Number, default: 0 },
-  physicalActivity: { type: Number, default: 0 }, // scale 0–10
+  physicalActivity: { type: Number, default: 0 },
   petExposure: { type: Number, default: 0 },
+
+  // Medication intake tracking
+  medicationIntake: {
+    morning: { type: Number, default: 0 },  // 1 = taken, 0 = not taken
+    evening: { type: Number, default: 0 },
+    night: { type: Number, default: 0 }
+  },
 
   caretakerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Caretaker',
-    default: null // Null means unassigned
+    default: null
   },
 
   createdAt: { type: Date, default: Date.now },

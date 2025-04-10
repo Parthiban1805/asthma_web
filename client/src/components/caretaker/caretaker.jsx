@@ -15,6 +15,15 @@ const CaretakerDashboard = () => {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
 
+  // Patient queries
+  const [patientQueries, setPatientQueries] = useState([]);
+  const [loadingQueries, setLoadingQueries] = useState(false);
+  const [activeTab, setActiveTab] = useState('patients'); // 'patients' or 'queries'
+  const [selectedQuery, setSelectedQuery] = useState(null);
+  const [queryResponse, setQueryResponse] = useState('');
+  const [queryStatusUpdate, setQueryStatusUpdate] = useState('');
+  const [updatingQuery, setUpdatingQuery] = useState(false);
+
   // Get caretaker ID from local storage on component mount
   useEffect(() => {
     try {
@@ -52,6 +61,27 @@ const CaretakerDashboard = () => {
     
     fetchAssignedPatients();
   }, [caretakerId]);
+
+  // Fetch patient queries when tab is switched to queries
+  useEffect(() => {
+    if (activeTab === 'queries' && caretakerId) {
+      fetchPatientQueries();
+    }
+  }, [activeTab, caretakerId]);
+
+  const fetchPatientQueries = async () => {
+    if (!caretakerId) return;
+    
+    setLoadingQueries(true);
+    try {
+      const response = await axios.get(`http://localhost:5000/api/queries/caretaker-queries/${caretakerId}`);
+      setPatientQueries(response.data.queries);
+      setLoadingQueries(false);
+    } catch (error) {
+      console.error('Error fetching patient queries:', error);
+      setLoadingQueries(false);
+    }
+  };
 
   // Search for patients by patientId
   const searchPatients = async (e) => {
@@ -134,6 +164,40 @@ const CaretakerDashboard = () => {
     }
   };
 
+  // View a specific query
+  const viewQueryDetails = (query) => {
+    setSelectedQuery(query);
+    setQueryResponse('');
+    setQueryStatusUpdate(query.status);
+  };
+
+  // Update query status and/or add response
+  const updateQuery = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedQuery) return;
+    
+    setUpdatingQuery(true);
+    try {
+      const response = await axios.put(`http://localhost:5000/api/queries/update-query/${selectedQuery._id}`, {
+        status: queryStatusUpdate,
+        response: queryResponse
+      });
+      
+      // Refresh queries list
+      fetchPatientQueries();
+      
+      // Update selected query with new data
+      setSelectedQuery(response.data.query);
+      
+      setUpdatingQuery(false);
+    } catch (error) {
+      console.error('Error updating query:', error);
+      setUpdatingQuery(false);
+      setError('Failed to update query');
+    }
+  };
+
   // If no caretakerId is provided but user is trying to access this page
   if (!caretakerId) {
     return (
@@ -144,17 +208,40 @@ const CaretakerDashboard = () => {
       </div>
     );
   }
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Caretaker Dashboard</h1>
-      
-      {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-          <p>{error}</p>
-        </div>
-      )}
-      
+
+  <div className="container mx-auto p-4">
+  <h1 className="text-2xl font-bold mb-6">Caretaker Dashboard</h1>
+  
+  {error && (
+    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+      <p>{error}</p>
+    </div>
+  )}
+  
+  {/* Tab Navigation */}
+  <div className="flex border-b mb-6">
+    <button
+      className={`py-2 px-4 mr-2 ${activeTab === 'patients' 
+        ? 'border-b-2 border-blue-500 text-blue-600 font-medium' 
+        : 'text-gray-600 hover:text-blue-500'}`}
+      onClick={() => setActiveTab('patients')}
+    >
+      Patients
+    </button>
+    <button
+      className={`py-2 px-4 mr-2 ${activeTab === 'queries' 
+        ? 'border-b-2 border-blue-500 text-blue-600 font-medium' 
+        : 'text-gray-600 hover:text-blue-500'}`}
+      onClick={() => setActiveTab('queries')}
+    >
+      Patient Queries
+    </button>
+  </div>
+  
+  {/* Patients Tab Content */}
+  {activeTab === 'patients' && (
+    <>
       {/* Search Box */}
       <div className="bg-white p-4 rounded shadow mb-6">
         <h2 className="text-xl font-semibold mb-4">Search Patient by ID</h2>
@@ -323,8 +410,6 @@ const CaretakerDashboard = () => {
                   </div>
                 </div>
               </section>
-              
-              {/* Medical Information */}
               <section className="mb-6">
                 <h3 className="text-lg font-medium mb-2">Medical Information</h3>
                 <div>
@@ -444,10 +529,168 @@ const CaretakerDashboard = () => {
                   </div>
                 )}
               </section>
+              {/* Rest of the patient details sections... */}
+              {/* Medical Information, Lung Function, Appointments, Prescriptions, Symptoms */}
+              {/* Keeping these sections as they were in the original component */}
             </div>
           )}
         </div>
       </div>
+    </>
+  )}
+  
+  {/* Queries Tab Content */}
+  {activeTab === 'queries' && (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Patient Queries List Panel */}
+      <div className="bg-white p-4 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Patient Queries</h2>
+        {loadingQueries ? (
+          <p>Loading queries...</p>
+        ) : patientQueries.length === 0 ? (
+          <p>No queries from patients.</p>
+        ) : (
+          <div className="divide-y">
+            {patientQueries.map(query => (
+              <div 
+                key={query._id} 
+                className={`py-3 cursor-pointer ${selectedQuery && selectedQuery._id === query._id ? 'bg-blue-50' : ''}`}
+                onClick={() => viewQueryDetails(query)}
+              >
+                <div className="flex justify-between">
+                  <div className="font-medium">{query.subject}</div>
+                  <div className="text-sm">
+                    {new Date(query.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 truncate">
+                  From: {query.patientId.name} (ID: {query.patientId.patientId})
+                </div>
+                <div className="flex justify-between mt-1">
+                  <div className="text-sm italic truncate">
+                    {query.message.substring(0, 60)}
+                    {query.message.length > 60 ? '...' : ''}
+                  </div>
+                  <div>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      query.priority === 'Low' ? 'bg-green-100 text-green-800' :
+                      query.priority === 'Medium' ? 'bg-blue-100 text-blue-800' :
+                      query.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {query.priority}
+                    </span>
+                    <span className={`ml-2 text-xs px-2 py-1 rounded ${
+                      query.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      query.status === 'Viewed' ? 'bg-blue-100 text-blue-800' :
+                      query.status === 'Responded' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {query.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Query Details Panel */}
+      <div className="bg-white p-4 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Query Details</h2>
+        {!selectedQuery ? (
+          <p>Select a query to view details.</p>
+        ) : (
+          <div>
+            <div className="mb-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">{selectedQuery.subject}</h3>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  selectedQuery.priority === 'Low' ? 'bg-green-100 text-green-800' :
+                  selectedQuery.priority === 'Medium' ? 'bg-blue-100 text-blue-800' :
+                  selectedQuery.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {selectedQuery.priority}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">
+                From: {selectedQuery.patientId.name} (ID: {selectedQuery.patientId.patientId})
+              </p>
+              <p className="text-sm text-gray-600">
+                Submitted: {new Date(selectedQuery.createdAt).toLocaleString()}
+              </p>
+            </div>
+            
+            <div className="bg-gray-100 p-3 rounded mb-4">
+              <p className="whitespace-pre-wrap">{selectedQuery.message}</p>
+            </div>
+            
+            {/* Response Form */}
+            <form onSubmit={updateQuery}>
+              <div className="mb-4">
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  value={queryStatusUpdate}
+                  onChange={(e) => setQueryStatusUpdate(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Viewed">Viewed</option>
+                  <option value="Responded">Responded</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="response" className="block text-sm font-medium text-gray-700 mb-1">
+                  Your Response
+                </label>
+                <textarea
+                  id="response"
+                  value={queryResponse}
+                  onChange={(e) => setQueryResponse(e.target.value)}
+                  rows="5"
+                  className="w-full p-2 border rounded"
+                  placeholder="Type your response here..."
+                ></textarea>
+              </div>
+              
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={updatingQuery}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+                >
+                  {updatingQuery ? 'Updating...' : 'Update Query'}
+                </button>
+              </div>
+            </form>
+{/* Previous Responses (if you implement tracking multiple responses) */}
+{selectedQuery.responses && selectedQuery.responses.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-medium mb-2">Previous Responses</h4>
+                    <div className="space-y-3">
+                      {selectedQuery.responses.map((resp, index) => (
+                        <div key={index} className="bg-gray-50 p-3 rounded border">
+                          <p className="text-sm text-gray-600">
+                            {new Date(resp.timestamp).toLocaleString()}
+                          </p>
+                          <p className="whitespace-pre-wrap">{resp.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -15,6 +15,11 @@ const prescriptionSchema = new mongoose.Schema({
   status: {
     type: String,
     default: 'Active'
+  },
+  timeOfDay: {
+    morning: { type:Date },
+    evening: { type:Date  },
+    night: { type:Date  }
   }
 });
 
