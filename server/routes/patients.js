@@ -95,9 +95,9 @@ router.get('/patients/:id', async (req, res) => {
   
   
   // Update patient
-  router.put('/patients/:id', async (req, res) => {
+  router.put('/patients/:patientId', async (req, res) => {
     try {
-      const patientId = req.params.id;
+      const patientId = req.params.patientId;
   
       if (!patientId) {
         return res.status(400).json({ message: 'Invalid patient ID' });
@@ -106,10 +106,10 @@ router.get('/patients/:id', async (req, res) => {
       console.log(`Update request for patient ID: ${patientId}`);
       console.log('Request body:', req.body);
   
-      if (req.body.patientId) {
+      // Check if new patientId is already used by another patient
+      if (req.body.patientId && req.body.patientId !== patientId) {
         const existing = await Patient.findOne({
           patientId: req.body.patientId,
-          _id: { $ne: patientId } // Use the ID from the URL
         });
   
         if (existing) {
@@ -118,7 +118,7 @@ router.get('/patients/:id', async (req, res) => {
       }
   
       const updated = await Patient.findOneAndUpdate(
-        { _id: patientId }, // use _id for updating, not patientId
+        { patientId: patientId },
         req.body,
         { new: true, runValidators: true }
       );

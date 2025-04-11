@@ -8,7 +8,6 @@ const PatientDashboard = () => {
     const [prescriptions, setPrescriptions] = useState([]);
     const [appointments, setAppointments] = useState([]);
     const [symptoms, setSymptoms] = useState([]);
-    const [caretakers, setCaretakers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showSymptomForm, setShowSymptomForm] = useState(false);
@@ -128,14 +127,7 @@ const PatientDashboard = () => {
             setQueries([]);
           }
           
-          try {
-            // Fetch caretakers
-            const caretakersResponse = await axios.get(`http://localhost:5000/api/caretakers/${patientId}`);
-            setCaretakers(caretakersResponse.data || []);
-          } catch (err) {
-            console.error("Error fetching caretakers:", err);
-            setCaretakers([]);
-          }
+         
           
           setLoading(false);
         } catch (err) {
@@ -162,7 +154,7 @@ const PatientDashboard = () => {
         else if (type === 'range') {
           setNewSymptom({
             ...newSymptom,
-            [name]: parseInt(value, 10)
+            [name]: parseFloat(value, 10)
           });
         }
         // For text inputs (notes)
@@ -426,7 +418,17 @@ const shouldTakeAtTime = (prescription, timeOfDay) => {
 const formatTimePeriod = (period) => {
   return period.charAt(0).toUpperCase() + period.slice(1);
 };
-
+const SymptomChecklist = ({ newSymptom, handleSymptomChange, patient }) => {
+  // Define symptoms with their labels and additional info
+  const symptoms = [
+    { key: 'coughing', label: 'Coughing' },
+    { key: 'chestTightness', label: 'Chest Tightness' },
+    { key: 'shortnessOfBreath', label: 'Shortness of Breath' },
+    { key: 'wheezing', label: 'Wheezing' },
+    { key: 'nighttimeSymptoms', label: 'Nighttime Symptoms' },
+    { key: 'exercise', label: 'Exercise-Related' }
+  ];
+}
 
 
     if (loading) return (
@@ -467,6 +469,15 @@ const formatTimePeriod = (period) => {
     <div className="flex gap-3">
       {/* Edit Profile Button */}
     
+      <button 
+        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center"
+        onClick={() => setEditingProfile(!editingProfile)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+        {editingProfile ? 'Cancel' : 'Edit Profile'}
+      </button>
 
       {/* Take Prediction Button */}
       <button 
@@ -669,19 +680,7 @@ const formatTimePeriod = (period) => {
       <p className="text-red-600 mb-3">
         <strong>IMPORTANT:</strong> This will send an urgent alert to your care team. For life-threatening emergencies, call 911 immediately.
       </p>
-      
-      <div className="mb-4">
-        <label htmlFor="sosMessage" className="block mb-1 text-red-700">Describe your emergency:</label>
-        <textarea
-          id="sosMessage"
-          value={sosMessage}
-          onChange={(e) => setSosMessage(e.target.value)}
-          className="w-full border border-red-200 rounded-md p-2 focus:ring-2 focus:ring-red-300 focus:border-red-300 focus:outline-none"
-          rows="3"
-          placeholder="Describe your situation and symptoms"
-          required
-        ></textarea>
-      </div>
+    
       
       <button 
         type="submit" 
@@ -845,34 +844,34 @@ const formatTimePeriod = (period) => {
       <div className="grid md:grid-cols-2 gap-6 mb-4">
         {/* Symptom Checkboxes */}
         <div>
-          <h4 className="font-medium mb-3 text-green-700">Symptom Checklist</h4>
+  <h4 className="font-medium mb-3 text-green-700">Symptom Checklist</h4>
 
-          {[
-            ['coughing', 'Coughing'],
-            ['chestTightness', 'Chest Tightness'],
-            ['shortnessOfBreath', 'Shortness of Breath'],
-            ['wheezing', 'Wheezing'],
-            ['nighttimeSymptoms', 'Nighttime Symptoms'],
-            ['exercise', 'Exercise-Related'],
-          ].map(([key, label]) => (
-            <div className="flex items-center mb-3" key={key}>
-              <input
-                type="checkbox"
-                id={key}
-                name={key}
-                checked={newSymptom[key]}
-                onChange={handleSymptomChange}
-                className="h-4 w-4 mr-2 text-green-600"
-              />
-              <label htmlFor={key}>{label}</label>
-              {key === 'exercise' && newSymptom.exercise && patient.exerciseInduced && (
-                <span className="ml-2 text-sm text-orange-600">
-                  * Previous history of exercise-induced symptoms detected
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+  {[
+    ['coughing', 'Coughing'],
+    ['chestTightness', 'Chest Tightness'],
+    ['shortnessOfBreath', 'Shortness of Breath'],
+    ['wheezing', 'Wheezing'],
+    ['nighttimeSymptoms', 'Nighttime Symptoms'],
+    ['exercise', 'Exercise-Related'],
+  ].map(([key, label]) => (
+    <div className="flex items-center mb-3" key={key}>
+      <input
+        type="checkbox"
+        id={key}
+        name={key}
+        checked={newSymptom[key]}
+        onChange={handleSymptomChange}
+        className="h-4 w-4 mr-2 text-green-600"
+      />
+      <label htmlFor={key} className="text-gray-800">{label}</label>
+      {key === 'exercise' && newSymptom.exercise && patient?.exerciseInduced && (
+        <span className="ml-2 text-sm text-orange-600">
+          * Previous history of exercise-induced symptoms detected
+        </span>
+      )}
+    </div>
+  ))}
+</div>
 
         {/* Triggers Section */}
         <div>
@@ -889,29 +888,51 @@ const formatTimePeriod = (period) => {
             />
             <label htmlFor="smoking">Smoking</label>
           </div>
-
           {[
-            ['pollutionExposure', 'Pollution Exposure'],
-            ['pollenExposure', 'Pollen Exposure'],
-            ['dustExposure', 'Dust Exposure'],
-            ['physicalActivity', 'Physical Activity Level'],
-            ['petExposure', 'Pet Exposure'],
-          ].map(([key, label]) => (
-            <div className="mb-3" key={key}>
-              <label htmlFor={key} className="block mb-1">{label}:</label>
-              <input
-                type="number"
-                id={key}
-                name={key}
-                step="0.0000000001"
-                min="0"
-                max="10"
-                value={newSymptom[key]}
-                onChange={handleSymptomChange}
-                className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
-            </div>
+  ['pollutionExposure', 'Pollution Exposure'],
+  ['pollenExposure', 'Pollen Exposure'],
+  ['dustExposure', 'Dust Exposure'],
+  ['physicalActivity', 'Physical Activity Level'],
+  ['petExposure', 'Pet Exposure'],
+].map(([key, label]) => (
+  <div className="mb-4" key={key}>
+    <label htmlFor={key} className="block mb-1">
+      {label}: <span className="font-medium text-green-700">{newSymptom[key]}</span>
+    </label>
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">0</span>
+      <div className="relative flex-1">
+        <input
+          type="range"
+          id={key}
+          name={key}
+          min="0"
+          max="10"
+          step="0.2"
+          value={newSymptom[key]}
+          onChange={handleSymptomChange}
+          className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+          style={{
+            background: `linear-gradient(to right, #10B981 0%, #10B981 ${newSymptom[key] * 10}%, #E5E7EB ${newSymptom[key] * 10}%, #E5E7EB 100%)`
+          }}
+        />
+        <div className="absolute w-full flex justify-between -mt-1 px-1">
+          {[...Array(11).keys()].map(tick => (
+            <div key={tick} className="h-1 w-1 bg-gray-300 rounded-full"></div>
           ))}
+        </div>
+      </div>
+      <span className="text-xs text-gray-500">10</span>
+    </div>
+    <div className="flex justify-between text-xs text-gray-500 px-2 mt-1">
+      <span>None</span>
+      <span>Mild</span>
+      <span>Moderate</span>
+      <span>Severe</span>
+    </div>
+  </div>
+))}
+
         </div>
       </div>
 
