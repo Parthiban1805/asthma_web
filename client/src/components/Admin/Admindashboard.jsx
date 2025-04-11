@@ -360,7 +360,6 @@ const Dashboard = () => {
                             >
                               Delete
                             </button>
-                            <button className="text-green-600 hover:text-green-800">Schedule</button>
                           </td>
                         </tr>
                       ))}
@@ -415,7 +414,6 @@ const Dashboard = () => {
                             >
                               Delete
                             </button>
-                            <button className="text-green-600 hover:text-green-800">Assign Patient</button>
                           </td>
                         </tr>
                       ))}

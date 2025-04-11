@@ -96,13 +96,24 @@ router.delete('/admin/caretakers/:caretakerId', async (req, res) => {
   try {
     const { caretakerId } = req.params;
 
-    const deletedCaretaker = await Caretaker.findByIdAndDelete(caretakerId);
+    // Find the caretaker first
+    const caretaker = await Caretaker.findById(caretakerId);
 
-    if (!deletedCaretaker) {
+    if (!caretaker) {
       return res.status(404).json({ message: 'Caretaker not found' });
     }
 
-    res.status(200).json({ message: 'Caretaker deleted successfully' });
+    const emailToDelete = caretaker.email; // Ensure 'email' is in Caretaker schema
+
+    // Delete caretaker from Caretaker collection
+    await Caretaker.findByIdAndDelete(caretakerId);
+
+    // Delete from User collection
+    if (emailToDelete) {
+      await User.findOneAndDelete({ email: emailToDelete });
+    } 
+
+    res.status(200).json({ message: 'Caretaker and corresponding user deleted successfully' });
   } catch (err) {
     console.error('Error deleting caretaker:', err);
     res.status(500).json({ message: 'Failed to delete caretaker', error: err.message });

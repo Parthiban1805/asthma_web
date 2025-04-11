@@ -825,254 +825,228 @@ const formatTimePeriod = (period) => {
           </div>        
         {/* Symptom Tracking */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-green-700">Symptom Tracking</h2>
-            <button 
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
-              onClick={() => setShowSymptomForm(!showSymptomForm)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              {showSymptomForm ? 'Cancel' : 'Add Symptoms'}
-            </button>
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-2xl font-semibold text-green-700">Symptom Tracking</h2>
+    <button 
+      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+      onClick={() => setShowSymptomForm(!showSymptomForm)}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+      {showSymptomForm ? 'Cancel' : 'Add Symptoms'}
+    </button>
+  </div>
+  
+  {showSymptomForm && (
+    <form onSubmit={submitSymptom} className="mb-6 bg-gradient-to-r from-green-50 to-teal-50 p-5 rounded-md shadow-sm">
+      <h3 className="font-medium mb-3 text-green-700">Record New Symptoms</h3>
+
+      <div className="grid md:grid-cols-2 gap-6 mb-4">
+        {/* Symptom Checkboxes */}
+        <div>
+          <h4 className="font-medium mb-3 text-green-700">Symptom Checklist</h4>
+
+          {[
+            ['coughing', 'Coughing'],
+            ['chestTightness', 'Chest Tightness'],
+            ['shortnessOfBreath', 'Shortness of Breath'],
+            ['wheezing', 'Wheezing'],
+            ['nighttimeSymptoms', 'Nighttime Symptoms'],
+            ['exercise', 'Exercise-Related'],
+          ].map(([key, label]) => (
+            <div className="flex items-center mb-3" key={key}>
+              <input
+                type="checkbox"
+                id={key}
+                name={key}
+                checked={newSymptom[key]}
+                onChange={handleSymptomChange}
+                className="h-4 w-4 mr-2 text-green-600"
+              />
+              <label htmlFor={key}>{label}</label>
+              {key === 'exercise' && newSymptom.exercise && patient.exerciseInduced && (
+                <span className="ml-2 text-sm text-orange-600">
+                  * Previous history of exercise-induced symptoms detected
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Triggers Section */}
+        <div>
+          <h4 className="font-medium mb-3 text-green-700">Triggers</h4>
+
+          <div className="flex items-center mb-3">
+            <input
+              type="checkbox"
+              id="smoking"
+              name="smoking"
+              checked={newSymptom.smoking}
+              onChange={handleSymptomChange}
+              className="h-4 w-4 mr-2 text-green-600"
+            />
+            <label htmlFor="smoking">Smoking</label>
           </div>
-          {showSymptomForm && (
- <form onSubmit={submitSymptom} className="mb-6 bg-gradient-to-r from-green-50 to-teal-50 p-5 rounded-md shadow-sm">
- <h3 className="font-medium mb-3 text-green-700">Record New Symptoms</h3>
 
- <div className="grid md:grid-cols-2 gap-6 mb-4">
-  {/* Symptom Checkboxes */}
-  <div>
-    <h4 className="font-medium mb-3 text-green-700">Symptom Checklist</h4>
+          {[
+            ['pollutionExposure', 'Pollution Exposure'],
+            ['pollenExposure', 'Pollen Exposure'],
+            ['dustExposure', 'Dust Exposure'],
+            ['physicalActivity', 'Physical Activity Level'],
+            ['petExposure', 'Pet Exposure'],
+          ].map(([key, label]) => (
+            <div className="mb-3" key={key}>
+              <label htmlFor={key} className="block mb-1">{label}:</label>
+              <input
+                type="number"
+                id={key}
+                name={key}
+                step="0.0000000001"
+                min="0"
+                max="10"
+                value={newSymptom[key]}
+                onChange={handleSymptomChange}
+                className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
 
-    {[
-      ['coughing', 'Coughing'],
-      ['chestTightness', 'Chest Tightness'],
-      ['shortnessOfBreath', 'Shortness of Breath'],
-      ['wheezing', 'Wheezing'],
-      ['nighttimeSymptoms', 'Nighttime Symptoms'],
-      ['exercise', 'Exercise-Related'],
-    ].map(([key, label]) => (
-      <div className="flex items-center mb-3" key={key}>
-        <input
-          type="checkbox"
-          id={key}
-          name={key}
-          checked={newSymptom[key]}
+      <div className="mb-4">
+        <label htmlFor="notes" className="block mb-1 text-green-700">Notes:</label>
+        <textarea
+          id="notes"
+          name="notes"
+          value={newSymptom.notes}
           onChange={handleSymptomChange}
-          className="h-4 w-4 mr-2 text-green-600"
-        />
-        <label htmlFor={key}>{label}</label>
-        {key === 'exercise' && newSymptom.exercise && patient.exerciseInduced && (
-          <span className="ml-2 text-sm text-orange-600">
-            * Previous history of exercise-induced symptoms detected
-          </span>
-        )}
+          className="w-full border border-green-200 rounded-md p-2 focus:ring-2 focus:ring-green-300 focus:border-green-300 focus:outline-none"
+          rows="3"
+          placeholder="Describe any additional details about your symptoms or triggers"
+        ></textarea>
       </div>
-    ))}
-  </div>
 
-  {/* Triggers Section – already checkbox + number fields, no change */}
-  <div>
-    <h4 className="font-medium mb-3 text-green-700">Triggers</h4>
+      <button
+        type="submit"
+        className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+      >
+        Save Symptoms
+      </button>
+    </form>
+  )}
 
-    <div className="flex items-center mb-3">
-      <input
-        type="checkbox"
-        id="smoking"
-        name="smoking"
-        checked={newSymptom.smoking}
-        onChange={handleSymptomChange}
-        className="h-4 w-4 mr-2 text-green-600"
-      />
-      <label htmlFor="smoking">Smoking</label>
-    </div>
-
-    {[
-      ['pollutionExposure', 'Pollution Exposure'],
-      ['pollenExposure', 'Pollen Exposure'],
-      ['dustExposure', 'Dust Exposure'],
-      ['physicalActivity', 'Physical Activity Level'],
-      ['petExposure', 'Pet Exposure'],
-    ].map(([key, label]) => (
-      <div className="mb-3" key={key}>
-        <label htmlFor={key} className="block mb-1">{label}:</label>
-        <input
-  type="number"
-  id={key}
-  name={key}
-  step="0.0000000001" // allows up to 10 decimal places
-  min="0"
-  max="10"
-  value={newSymptom[key]}
-  onChange={handleSymptomChange}
-  className="w-full border border-green-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-/>
-      </div>
-    ))}
-  </div>
-</div>
-
-
- <div className="mb-4">
-   <label htmlFor="notes" className="block mb-1 text-green-700">Notes:</label>
-   <textarea
-     id="notes"
-     name="notes"
-     value={newSymptom.notes}
-     onChange={handleSymptomChange}
-     className="w-full border border-green-200 rounded-md p-2 focus:ring-2 focus:ring-green-300 focus:border-green-300 focus:outline-none"
-     rows="3"
-     placeholder="Describe any additional details about your symptoms or triggers"
-   ></textarea>
- </div>
-
- <button
-   type="submit"
-   className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
- >
-   Save Symptoms
- </button>
-</form>
-
-)}
-
-          
-{symptoms.length > 0 ? (
-  <div className="overflow-x-auto bg-gradient-to-r from-green-50 to-emerald-50 p-2 rounded-md">
+  {symptoms.length > 0 ? (
+    <div className="overflow-x-auto bg-gradient-to-r from-green-50 to-emerald-50 p-2 rounded-md">
     <table className="w-full text-sm">
       <thead className="bg-green-100">
         <tr>
+          <th className="p-3 text-left text-green-800">Symptoms</th>
           <th className="p-3 text-left text-green-800">Triggers</th>
+          <th className="p-3 text-left text-green-800">Notes</th>
         </tr>
       </thead>
       <tbody>
         {symptoms.map((symptom, index) => (
           <tr key={symptom._id} className={index % 2 === 0 ? "bg-white" : "bg-green-50"}>
             <td className="p-3 border-t border-green-100">
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap gap-1">
                 {symptom.coughing > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs mr-2">Coughing</span>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-red-500 rounded-full" 
-                        style={{ width: `${symptom.coughing * 10}%` }}
-                      ></div>
-                    </div>
-                    <span className="ml-1 text-xs">{symptom.coughing}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs">
+                    Coughing {symptom.coughing > 0 && `(${symptom.coughing})`}
+                  </span>
                 )}
                 {symptom.chestTightness > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs mr-2">Chest Tightness</span>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-orange-500 rounded-full" 
-                        style={{ width: `${symptom.chestTightness * 10}%` }}
-                      ></div>
-                    </div>
-                    <span className="ml-1 text-xs">{symptom.chestTightness}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs">
+                    Chest Tightness {symptom.chestTightness > 0 && `(${symptom.chestTightness})`}
+                  </span>
                 )}
                 {symptom.shortnessOfBreath > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs mr-2">Shortness of Breath</span>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-yellow-500 rounded-full" 
-                        style={{ width: `${symptom.shortnessOfBreath * 10}%` }}
-                      ></div>
-                    </div>
-                    <span className="ml-1 text-xs">{symptom.shortnessOfBreath}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                    Shortness of Breath {symptom.shortnessOfBreath > 0 && `(${symptom.shortnessOfBreath})`}
+                  </span>
                 )}
                 {symptom.wheezing > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs mr-2">Wheezing</span>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-purple-500 rounded-full" 
-                        style={{ width: `${symptom.wheezing * 10}%` }}
-                      ></div>
-                    </div>
-                    <span className="ml-1 text-xs">{symptom.wheezing}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
+                    Wheezing {symptom.wheezing > 0 && `(${symptom.wheezing})`}
+                  </span>
                 )}
                 {symptom.nighttimeSymptoms > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-xs mr-2">Nighttime</span>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-indigo-500 rounded-full" 
-                        style={{ width: `${symptom.nighttimeSymptoms * 10}%` }}
-                      ></div>
-                    </div>
-                    <span className="ml-1 text-xs">{symptom.nighttimeSymptoms}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-xs">
+                    Nighttime {symptom.nighttimeSymptoms > 0 && `(${symptom.nighttimeSymptoms})`}
+                  </span>
                 )}
                 {symptom.exercise > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs mr-2">Exercise</span>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-blue-500 rounded-full" 
-                        style={{ width: `${symptom.exercise * 10}%` }}
-                      ></div>
-                    </div>
-                    <span className="ml-1 text-xs">{symptom.exercise}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    Exercise {symptom.exercise > 0 && `(${symptom.exercise})`}
+                  </span>
+                )}
+                {!symptom.coughing && !symptom.chestTightness && !symptom.shortnessOfBreath && 
+                 !symptom.wheezing && !symptom.nighttimeSymptoms && !symptom.exercise && (
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    None reported
+                  </span>
                 )}
               </div>
             </td>
             <td className="p-3 border-t border-green-100">
-              <div className="flex flex-col gap-1">
-                {symptom.smoking > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {symptom.smoking && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs">Smoking</span>
                 )}
                 {symptom.pollutionExposure > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-xs mr-2">Pollution</span>
-                    <span className="text-xs">{symptom.pollutionExposure}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-xs">
+                    Pollution {symptom.pollutionExposure > 0 && `(${symptom.pollutionExposure})`}
+                  </span>
                 )}
                 {symptom.pollenExposure > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs mr-2">Pollen</span>
-                    <span className="text-xs">{symptom.pollenExposure}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                    Pollen {symptom.pollenExposure > 0 && `(${symptom.pollenExposure})`}
+                  </span>
                 )}
                 {symptom.dustExposure > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs mr-2">Dust</span>
-                    <span className="text-xs">{symptom.dustExposure}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs">
+                    Dust {symptom.dustExposure > 0 && `(${symptom.dustExposure})`}
+                  </span>
                 )}
                 {symptom.physicalActivity > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs mr-2">Activity</span>
-                    <span className="text-xs">{symptom.physicalActivity}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">
+                    Activity {symptom.physicalActivity > 0 && `(${symptom.physicalActivity})`}
+                  </span>
                 )}
                 {symptom.petExposure > 0 && (
-                  <div className="flex items-center">
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs mr-2">Pets</span>
-                    <span className="text-xs">{symptom.petExposure}/10</span>
-                  </div>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    Pets {symptom.petExposure > 0 && `(${symptom.petExposure})`}
+                  </span>
+                )}
+                {!symptom.smoking && symptom.pollutionExposure <= 0 && symptom.pollenExposure <= 0 && 
+                 symptom.dustExposure <= 0 && symptom.physicalActivity <= 0 && symptom.petExposure <= 0 && (
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    None identified
+                  </span>
                 )}
               </div>
+            </td>
+            <td className="p-3 border-t border-green-100 max-w-xs truncate">
+              {symptom.notes || <span className="text-gray-500 italic">No notes</span>}
+            </td>
+            <td className="p-3 border-t border-green-100">
+              <button 
+                onClick={() => handleViewDetails(symptom._id)} 
+                className="text-green-600 hover:text-green-800 flex items-center"
+              >
+              </button>
             </td>
           </tr>
         ))}
       </tbody>
     </table>
   </div>
-) : (
-  <p className="bg-green-50 p-4 rounded-md text-green-800">No symptom records yet</p>
-)}
-
-        </div>
+  ) : (
+    <p className="bg-green-50 p-4 rounded-md text-green-800">No symptom records yet</p>
+  )}
+</div>
         
         {/* Upcoming Appointments */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-yellow-500 hover:shadow-lg transition-shadow">

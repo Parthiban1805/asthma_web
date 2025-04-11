@@ -8,7 +8,7 @@ const Caretaker = require('../models/Caretaker');
 const Prescription = require('../models/Medication');
 const Symptom = require('../models/Symptom');
 const PatientQuery=require('../models/patientQuery')
-
+const User=require('../models/User')
 router.get('/admin/patients', async (req, res) => {
   try {
     const patients = await Patient.find({}, 'patientId name phone dateOfBirth gender');
@@ -250,34 +250,56 @@ router.post('/admin/prescriptions', async (req, res) => {
 });
 router.delete('/admin/patients/:patientId', async (req, res) => {
   try {
-    console.log(req.params.patientId )
+    const { patientId } = req.params;
+    console.log(patientId);
+
+    // Find the patient by patientId
     const patient = await Patient.findOne({ patientId: req.params.patientId });
-    
+     
     if (!patient) {
       return res.status(404).json({ msg: 'Patient not found' });
     }
-    
+
+    const emailToDelete = patient.email; // Assuming 'email' exists in Patient schema
+
+    // Delete patient
     await Patient.findOneAndDelete({ patientId: req.params.patientId });
-    
-    res.json({ msg: 'Patient removed' });
+ 
+    // Delete the corresponding user by email
+    if (emailToDelete) {
+      await User.findOneAndDelete({ email: emailToDelete });
+    }
+
+    res.json({ msg: 'Patient and corresponding user removed' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
 
+
 // Delete doctor
-router.delete('/admin/doctors/:doctorId',  async (req, res) => {
+router.delete('/admin/doctors/:doctorId', async (req, res) => {
   try {
+
+    // Find the doctor by doctorId
     const doctor = await Doctor.findOne({ doctorId: req.params.doctorId });
-    
+
     if (!doctor) {
       return res.status(404).json({ msg: 'Doctor not found' });
     }
-    
+
+    const emailToDelete = doctor.email; // Make sure Doctor schema includes email
+
+    // Delete the doctor
     await Doctor.findOneAndDelete({ doctorId: req.params.doctorId });
-    
-    res.json({ msg: 'Doctor removed' });
+
+    // Delete the corresponding user by email (or doctorId)
+    if (emailToDelete) {
+      await User.findOneAndDelete({ email: emailToDelete });
+    } 
+
+    res.json({ msg: 'Doctor and corresponding user removed' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
