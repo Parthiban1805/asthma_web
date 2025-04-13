@@ -236,7 +236,6 @@ router.get('/admin/caretakers/:id', async (req, res) => {
 
 
 
-module.exports = router;
 
 // Create new prescription
 router.post('/admin/prescriptions', async (req, res) => {
@@ -261,7 +260,7 @@ router.delete('/admin/patients/:patientId', async (req, res) => {
     }
 
     const emailToDelete = patient.email; // Assuming 'email' exists in Patient schema
-
+    console.log(emailToDelete)
     // Delete patient
     await Patient.findOneAndDelete({ patientId: req.params.patientId });
  

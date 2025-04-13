@@ -13,7 +13,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com'; // fallback 
 router.post('/send-sos', async (req, res) => {
   try {
     const { patientId, message } = req.body;
-
+    console.log(patientId)
     // Find patient by custom patientId (like "P909")
     const patient = await Patient.findOne({ patientId: patientId });
     if (!patient) {

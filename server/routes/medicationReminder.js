@@ -59,9 +59,4 @@ const checkMedicationIntake = async () => {
     }
   };
   
-  
-  
-  
-
-// You can schedule this function to run periodically using a cron job or a background job queue.
 module.exports = { checkMedicationIntake };

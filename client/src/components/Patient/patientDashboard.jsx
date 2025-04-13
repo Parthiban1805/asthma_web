@@ -331,7 +331,7 @@ const handleSosSubmit = async (e) => {
   try {
     const user = JSON.parse(localStorage.getItem('user'));
     const patientId = user.patientId;
-    
+    console.log(patientId)
     const response = await axios.post('http://localhost:5000/api/send-sos', {
       patientId,
       message: sosMessage

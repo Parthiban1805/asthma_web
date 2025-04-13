@@ -107,18 +107,10 @@ router.get('/patients/:id', async (req, res) => {
       console.log('Request body:', req.body);
   
       // Check if new patientId is already used by another patient
-      if (req.body.patientId && req.body.patientId !== patientId) {
-        const existing = await Patient.findOne({
-          patientId: req.body.patientId,
-        });
-  
-        if (existing) {
-          return res.status(400).json({ message: 'Patient ID already exists' });
-        }
-      }
+    
   
       const updated = await Patient.findOneAndUpdate(
-        { patientId: patientId },
+        { _id: patientId },
         req.body,
         { new: true, runValidators: true }
       );
