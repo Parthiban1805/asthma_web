@@ -29,7 +29,6 @@ exports.register = async (req, res) => {
       role,
     });
 
-    await newUser.save();
 
     // Create role-specific records based on role
     if (role === 'doctor') {
@@ -92,6 +91,7 @@ exports.register = async (req, res) => {
     }
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    await newUser.save();
 
     res.json({
       token,

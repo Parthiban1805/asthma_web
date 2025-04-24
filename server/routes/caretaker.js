@@ -5,7 +5,7 @@ const Caretaker = require('../models/Caretaker');
 const Appointment = require('../models/Appointment');
 const Prescription = require('../models/Medication');
 const Symptom = require('../models/Symptom');
-
+const User=require('../models/User')
 
 router.get('/caretakers/:patientId', async (req, res) => {
   try {

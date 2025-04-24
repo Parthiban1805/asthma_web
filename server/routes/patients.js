@@ -93,7 +93,37 @@ router.get('/patients/:id', async (req, res) => {
 }
     });
   
+    router.put('/patient_doctors/:patientId', async (req, res) => {
+      try {
+        const patientId = req.params.patientId;
+    
+        if (!patientId) {
+          return res.status(400).json({ message: 'Invalid patient ID' });
+        }
+    
+        console.log(`Update request for patient ID: ${patientId}`);
+        console.log('Request body:', req.body);
   
+        // Check if new patientId is already used by another patient
+      
+    
+        const updated = await Patient.findOneAndUpdate(
+          { _id: patientId },
+          req.body,
+          { new: true, runValidators: true }
+        );
+        
+    
+        if (!updated) {
+          return res.status(404).json({ message: 'Patient not found' });
+        }
+    
+        res.json(updated);
+      } catch (err) {
+        console.error('Error updating patient:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+      }
+    });
   // Update patient
   router.put('/patients/:patientId', async (req, res) => {
     try {
@@ -105,15 +135,16 @@ router.get('/patients/:id', async (req, res) => {
   
       console.log(`Update request for patient ID: ${patientId}`);
       console.log('Request body:', req.body);
-  
+
       // Check if new patientId is already used by another patient
     
   
       const updated = await Patient.findOneAndUpdate(
-        { _id: patientId },
+        { patientId: patientId },
         req.body,
         { new: true, runValidators: true }
       );
+      
   
       if (!updated) {
         return res.status(404).json({ message: 'Patient not found' });
@@ -126,8 +157,9 @@ router.get('/patients/:id', async (req, res) => {
     }
   });
   
-  router.put('/doctor/patients/:id', async (req, res) => {
+  router.put('/doctors/patients/:id', async (req, res) => {
     try {
+      console.log("check")
       const updatedPatient = await Patient.findByIdAndUpdate(
         req.params.id,
         req.body,

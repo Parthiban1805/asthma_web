@@ -176,7 +176,7 @@ const PatientManagement = () => {
   
       if (selectedPatient) {
         // Update existing patient
-        await axios.put(`http://localhost:5000/api/patients/${selectedPatient._id}`, updatedFormData);
+        await axios.put(`http://localhost:5000/api/patient_doctors/${selectedPatient._id}`, updatedFormData);
         setMessage({ text: 'Patient updated successfully', type: 'success' });
       } else {
         // Check if we're updating an existing patient by patientId
@@ -185,7 +185,7 @@ const PatientManagement = () => {
           
           if (existingPatient.data) {
             // Update existing patient found by patientId
-            await axios.put(`http://localhost:5000/api/doctor/patients/${existingPatient.data._id}`, updatedFormData);
+            await axios.put(`http://localhost:5000/api/doctors/patients/${existingPatient.data._id}`, updatedFormData);
             setMessage({ text: 'Patient updated successfully', type: 'success' });
           }
         } catch (error) {
