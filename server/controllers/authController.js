@@ -27,6 +27,8 @@ exports.register = async (req, res) => {
       fullName,
       phone,
       role,
+      patientId: req.body.patientId || `PAT-${Date.now().toString().slice(-6)}`,
+
     });
 
 
