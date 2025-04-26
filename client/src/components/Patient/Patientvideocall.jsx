@@ -13,9 +13,8 @@ const PatientVideoCall = () => {
   // Function that initializes and joins the ZEGOCLOUD call
   const setupZegoCall = async (element) => {
     // Replace these with your actual ZEGOCLOUD credentials
-    const appID = 510870875;            // example: 510870875
-    const serverSecret = 'ed84c79ea4e2bc3a7e532f7b365936dd'; // example
-    // Generate a unique userID for the local participant
+const appID = 1431823665
+const serverSecret = "84b8d04799aa4045c4644bb38259753e"   // Generate a unique userID for the local participant
     const userID = String(Date.now());
     // Possibly fetch the patient’s name from localStorage or state
     const userName = 'PatientUser';

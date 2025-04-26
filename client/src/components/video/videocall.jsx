@@ -11,9 +11,9 @@ const VideoCall = () => {
 
   const setupZegoCall = async (element) => {
     // Replace these with your actual ZEGOCLOUD credentials
-    const appID = 510870875;  
-    const serverSecret = 'ed84c79ea4e2bc3a7e532f7b365936dd'; 
-
+    const appID = 1431823665
+    const serverSecret = "84b8d04799aa4045c4644bb38259753e"   // Generate a unique userID for the local participant
+    
     const userID = String(Date.now());
     const userName = 'DoctorUser';
 

@@ -5,8 +5,9 @@ const Patient = require('../models/Patient');
 const Caretaker = require('../models/caretaker');
 const Doctor = require('../models/Doctor');
 const { sendEmailNotification } = require('../services/email');
+const User = require('../models/User'); 
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com'; // fallback email
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com'; 
 
 // Send an SOS alert
 // Send an SOS alert
@@ -19,7 +20,9 @@ router.post('/send-sos', async (req, res) => {
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
-
+    const adminUser = await User.findOne({ role: 'admin' });
+    const adminEmail = adminUser?.email;
+    
     // Create SOS Alert with MongoDB _id
     const sosAlert = new SosAlert({ patientId: patient._id, message });
     const savedAlert = await sosAlert.save();
@@ -64,10 +67,17 @@ Please take immediate action.
       }
     });
 
-    // Notify doctor
     if (doctor?.email) {
       emailPromises.push(sendEmailNotification({
         recipient: doctor.email,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml
+      }));
+    }
+    if (adminEmail) {
+      emailPromises.push(sendEmailNotification({
+        recipient: adminEmail,
         subject: emailSubject,
         text: emailText,
         html: emailHtml

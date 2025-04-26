@@ -16,6 +16,41 @@ router.get('/symptoms/:patientId', async (req, res) => {
   }
 });
 
+router.get('/symptoms/caretaker/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id)
+    console.log('GET /symptoms/:id hit with ID:', id);
+
+    console.log('Incoming request for patient symptoms. MongoDB _id:', id);
+
+    // Find the patient using the ObjectId
+    const patient = await Patient.findById(id);
+    if (!patient) {
+      console.log('❌ Patient not found with ID:', id);
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    console.log('✅ Found patient:', patient);
+
+    // Use patient.patientId to find symptoms
+    const symptoms = await Symptom.find({ patientId: patient.patientId }).sort({ date: -1 });
+
+    console.log(`📄 Found ${symptoms.length} symptoms for patientId "${patient.patientId}"`);
+
+    res.status(200).json(symptoms);
+  } catch (err) {
+    console.error('❗ Error fetching symptoms:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/test', (req, res) => {
+  console.log('/api/symptoms/test route hit');
+  res.send('Symptoms router working!');
+});
+
+
 // Add new symptom record
 router.post('/symptoms', async (req, res) => {
   try {

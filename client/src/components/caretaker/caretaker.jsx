@@ -8,7 +8,8 @@ const CaretakerDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [caretakerId, setCaretakerId] = useState(null);
-  
+  const [symptoms, setSymptoms] = useState([]);
+
   // Search functionality
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -61,7 +62,7 @@ const CaretakerDashboard = () => {
     
     fetchAssignedPatients();
   }, [caretakerId]);
-
+ 
   // Fetch patient queries when tab is switched to queries
   useEffect(() => {
     if (activeTab === 'queries' && caretakerId) {
@@ -146,23 +147,42 @@ const CaretakerDashboard = () => {
     }
   };
 
-  // Fetch patient details
   const viewPatientDetails = async (patientId) => {
     try {
       setLoading(true);
       setSelectedPatient(patientId);
-      
-      const response = await axios.get(`http://localhost:5000/api/caretaker/patient-details/${patientId}`);
-      setPatientDetails(response.data);
-      
-      setLoading(false);
+      console.log("Patient id:", patientId);
+  
+      const patientResponse = await axios.get(`http://localhost:5000/api/caretaker/patient-details/${patientId}`);
+      setPatientDetails(patientResponse.data);
+  
       setError(null);
     } catch (error) {
       console.error('Error fetching patient details:', error);
-      setLoading(false);
       setError('Failed to load patient details');
+    } finally {
+      setLoading(false);
     }
   };
+  
+  const fetchSymptoms = async (patientId) => {
+    try {
+      setLoading(true);
+      console.log("Fetching symptoms for:", patientId);
+  
+      const symptomsResponse = await axios.get(`http://localhost:5000/api/symptoms/caretaker/${patientId}`);
+      console.log(symptomsResponse.data);
+      setSymptoms(symptomsResponse.data);
+  
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching symptoms:', error);
+      setError('Failed to load symptoms');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
   // View a specific query
   const viewQueryDetails = (query) => {
@@ -282,12 +302,15 @@ const CaretakerDashboard = () => {
                       </p>
                     </div>
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => viewPatientDetails(patient._id)}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                      >
-                        View
-                      </button>
+                    <button
+    onClick={() => {
+      viewPatientDetails(patient._id);
+      fetchSymptoms(patient._id);
+    }}
+    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+  >
+    View
+  </button>
                       {!patient.caretakerId && (
                         <button
                           onClick={() => assignPatient(patient._id)}
@@ -502,33 +525,36 @@ const CaretakerDashboard = () => {
               
               {/* Symptoms */}
               <section>
-                <h3 className="text-lg font-medium mb-2">
-                  Recent Symptoms ({patientDetails.symptoms?.length || 0})
-                </h3>
-                {!patientDetails.symptoms || patientDetails.symptoms.length === 0 ? (
-                  <p>No symptom records found.</p>
-                ) : (
-                  <div className="max-h-40 overflow-y-auto">
-                    {patientDetails.symptoms.map(symptom => (
-                      <div key={symptom._id} className="mb-2 p-2 bg-gray-100 rounded">
-                        <p className="font-medium">
-                          {new Date(symptom.date).toLocaleDateString()} - 
-                          Severity: {symptom.severity}
-                        </p>
-                        <div className="grid grid-cols-2 gap-1 text-sm">
-                          <p>{symptom.coughing ? '✓' : '✗'} Coughing</p>
-                          <p>{symptom.chestTightness ? '✓' : '✗'} Chest Tightness</p>
-                          <p>{symptom.shortnessOfBreath ? '✓' : '✗'} Shortness of Breath</p>
-                          <p>{symptom.wheezing ? '✓' : '✗'} Wheezing</p>
-                          <p>{symptom.nighttimeSymptoms ? '✓' : '✗'} Nighttime Symptoms</p>
-                          <p>{symptom.exercise ? '✓' : '✗'} Exercise-induced</p>
-                        </div>
-                        {symptom.notes && <p className="text-sm mt-1">Notes: {symptom.notes}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+  <h3 className="text-lg font-medium mb-2">
+    Recent Symptoms ({symptoms.length || 0})
+  </h3>
+
+  {symptoms.length === 0 ? (
+    <p>No symptom records found.</p>
+  ) : (
+    <div className="max-h-40 overflow-y-auto">
+      {symptoms.map((symptom) => (
+        <div key={symptom._id} className="mb-2 p-2 bg-gray-100 rounded">
+          <p className="font-medium">
+            {new Date(symptom.date).toLocaleDateString()} - Severity: {symptom.severity}
+          </p>
+          <div className="grid grid-cols-2 gap-1 text-sm">
+            <p>{symptom.coughing ? '✓' : '✗'} Coughing</p>
+            <p>{symptom.chestTightness ? '✓' : '✗'} Chest Tightness</p>
+            <p>{symptom.shortnessOfBreath ? '✓' : '✗'} Shortness of Breath</p>
+            <p>{symptom.wheezing ? '✓' : '✗'} Wheezing</p>
+            <p>{symptom.nighttimeSymptoms ? '✓' : '✗'} Nighttime Symptoms</p>
+            <p>{symptom.exercise ? '✓' : '✗'} Exercise-induced</p>
+          </div>
+          {symptom.notes && (
+            <p className="text-sm mt-1">Notes: {symptom.notes}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+</section>
+
               {/* Rest of the patient details sections... */}
               {/* Medical Information, Lung Function, Appointments, Prescriptions, Symptoms */}
               {/* Keeping these sections as they were in the original component */}

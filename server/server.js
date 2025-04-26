@@ -52,6 +52,7 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true
 }).then(() => {
   console.log('✅ MongoDB connected');
+  require('./services/medicationRemainder');
 
   // Start checking for reminders immediately
   sendAppointmentReminders();
