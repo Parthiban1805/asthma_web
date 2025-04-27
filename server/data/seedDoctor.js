@@ -15,7 +15,7 @@ const dummyDoctor = {
 
 async function insertDoctor() {
   try {
-    await mongoose.connect("mongodb+srv://parthis1805:Parthiban1805@cluster0.oov7qmy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
+    await mongoose.connect("mongodb+srv://Tharunika:qb2UmuCw1F011wOG@cluster0.mhmyc5b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
     const exists = await Doctor.findOne({ email: dummyDoctor.email });
 
     if (!exists) {

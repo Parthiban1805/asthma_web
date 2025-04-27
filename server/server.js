@@ -56,7 +56,6 @@ mongoose.connect(process.env.MONGO_URI, {
 
   // Start checking for reminders immediately
   sendAppointmentReminders();
-  checkMedicationIntake();
 
   // Check for reminders every second
   setInterval(() => {

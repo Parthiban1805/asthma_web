@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Patient = require('../models/Patient'); // Update the path accordingly
 
 // Connect to MongoDB
-mongoose.connect('mongodb+srv://parthis1805:Parthiban1805@cluster0.oov7qmy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect('mongodb+srv://Tharunika:qb2UmuCw1F011wOG@cluster0.mhmyc5b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
