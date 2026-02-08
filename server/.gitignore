@@ -22,3 +22,5 @@ c
 *.njsproj
 *.sln
 *.sw?
+venv/
+node_modules

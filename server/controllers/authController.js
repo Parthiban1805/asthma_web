@@ -5,18 +5,12 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Caretaker = require('../models/Caretaker');
 const Admin = require('../models/admin'); // Import the Admin model
-
 exports.register = async (req, res) => {
   try {
-    const { fullName, username, email, password, phone, role, department, permissions } = req.body;
-    console.log(req.body);
-
-    if (!username || !email || !password || !role) {
-      return res.status(400).json({ message: "Please fill in all required fields" });
-    }
+    const { fullName, username, email, password, phone, role, patientId } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: 'User already exists' });
+    if (existingUser) return res.status(400).json({ message: 'User with this email already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -27,89 +21,71 @@ exports.register = async (req, res) => {
       fullName,
       phone,
       role,
-      patientId: req.body.patientId || `PAT-${Date.now().toString().slice(-6)}`,
-
+      patientId: role === 'patient' ? patientId : undefined
     });
 
-
-    // Create role-specific records based on role
     if (role === 'doctor') {
       const newDoctor = new Doctor({
-        doctorId: req.body.doctorId || `DOC-${Date.now().toString().slice(-6)}`,
-        name: username,
+        doctorId: req.body.doctorId || `DOC-${Date.now().toString().slice(-4)}`,
+        name: fullName || username,
         email,
         phone,
         specialization: req.body.specialization || '',
-        licenseNumber: req.body.licenseNumber || '',
-        yearsOfExperience: req.body.yearsOfExperience || 0,
-        bio: req.body.bio || ''
       });
       await newDoctor.save();
     } 
     else if (role === 'patient') {
-      const newPatient = new Patient({
-        patientId: req.body.patientId || `PAT-${Date.now().toString().slice(-6)}`,
-        doctorId: req.body.doctorId || '',
-        emergencyContact:req.body.emergencyContact,
-        name: username,
-        email,
-        phone,
-        dateOfBirth: req.body.dateOfBirth || '',
-        gender: req.body.gender || '',
-        medicalHistory: req.body.medicalHistory || '',
-        bmi: req.body.bmi || 0,
-        petAllergy: req.body.petAllergy || false,
-        familyHistoryAsthma: req.body.familyHistoryAsthma || false,
-        historyOfAllergies: req.body.historyOfAllergies || false,
-        hayfever: req.body.hayfever || false,
-        gastroesophagealReflux: req.body.gastroesophagealReflux || false,
-        lungFunctionFEV1: req.body.lungFunctionFEV1 || 0,
-        lungFunctionFVC: req.body.lungFunctionFVC || 0,
-        exerciseInduced: req.body.exerciseInduced || false,
-        caretakerId: req.body.caretakerId || null
-      });
-      await newPatient.save();
+      // LINK LOGIC: Check if Patient record exists (pre-created by doctor)
+      let patientRecord = await Patient.findOne({ patientId: patientId });
+      
+      if (patientRecord) {
+        // Update existing record with registration details
+        patientRecord.email = email;
+        patientRecord.phone = phone;
+        patientRecord.name = fullName || username;
+        await patientRecord.save();
+      } else {
+        // Create fresh record
+        const newPatient = new Patient({
+          patientId: patientId,
+          name: fullName || username,
+          email,
+          phone,
+          emergencyContact: req.body.emergencyContact,
+        });
+        await newPatient.save();
+      }
     } 
     else if (role === 'caretaker') {
       const newCaretaker = new Caretaker({
-        name: username,
+        name: fullName || username,
         email,
         phone,
-        patients: req.body.patientId ? [req.body.patientId] : []
+        patients: []
       });
       await newCaretaker.save();
     }
     else if (role === 'admin') {
-      // Create Admin record
       const newAdmin = new Admin({
-        adminId: req.body.adminId || `ADMIN-${Date.now().toString().slice(-6)}`,
-        name: username,
+        adminId: `ADM-${Date.now().toString().slice(-4)}`,
+        name: fullName || username,
         email,
         phone,
-        department: department || 'General Administration',
-        permissions: permissions || ['view_users', 'edit_users', 'view_data']
       });
       await newAdmin.save();
     }
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     await newUser.save();
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    res.json({
-      token,
-      user: {
-        id: newUser._id,
-        username,
-        email,
-        fullName,
-        phone,
-        role
-      }
-    });
+    res.json({ token, user: { id: newUser._id, username, role } });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 exports.login = async (req, res) => {
   try {

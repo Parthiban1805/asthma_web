@@ -1,0 +1,4 @@
+pandas
+joblib
+scikit-learn==1.6.1
+numpy>=2.0.0

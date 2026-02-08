@@ -54,20 +54,26 @@ router.post('/predict-asthma', async (req, res) => {
       GastroesophagealReflux: patient.gastroesophagealReflux,
       LungFunctionFEV1: patient.lungFunctionFEV1,
       LungFunctionFVC: patient.lungFunctionFVC,
-      Wheezing: symptom.wheezing,
-      ShortnessOfBreath: symptom.shortnessOfBreath,
-      ChestTightness: symptom.chestTightness,
-      Coughing: symptom.coughing,
-      NighttimeSymptoms: symptom.nighttimeSymptoms,
-      ExerciseInduced: patient.exerciseInduced || symptom.exercise,
+      Wheezing: symptom ? symptom.wheezing : (patient.wheezing || 0),
+      ShortnessOfBreath: symptom ? symptom.shortnessOfBreath : (patient.shortnessOfBreath || 0),
+      ChestTightness: symptom ? symptom.chestTightness : (patient.chestTightness || 0),
+      Coughing: symptom ? symptom.coughing : (patient.coughing || 0),
+      NighttimeSymptoms: symptom ? symptom.nighttimeSymptoms : (patient.nighttimeSymptoms || 0),
+      ExerciseInduced: patient.exerciseInduced || (symptom ? symptom.exercise : 0),
     };
 
     console.log("✅ Final patient data object:", patientData);
 
     // 4. Call Python script with proper path
-    const pythonScriptPath = path.join(__dirname, '..', 'predict_modal.py');
-    const python = spawn('python', [pythonScriptPath, JSON.stringify(patientData)]);
+    const pythonExecutable = process.platform === "win32" 
+        ? path.join(__dirname, '..', 'venv', 'Scripts', 'python.exe')
+        : path.join(__dirname, '..', 'venv', 'bin', 'python');
 
+    const pythonScriptPath = path.join(__dirname, '..', 'predict_modal.py');
+    
+    // Use the explicit path to the venv python
+    const python = spawn(pythonExecutable, [pythonScriptPath, JSON.stringify(patientData)]);
+    
     let result = '';
     let pythonError = '';
 

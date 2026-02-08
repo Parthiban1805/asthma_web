@@ -14,29 +14,50 @@ import DoctorDetails from './components/Admin/DoctorDetails'
 import CaretakerDashboard from "./components/caretaker/caretaker";
 import VideoCall from "./components/video/videocall";  
 import PatientVideoCall from "./components/Patient/Patientvideocall";
-
 import CaretakerDetail from "./components/Admin/CaretakerDetail ";
+
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Authentication */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
+
+        {/* Doctor Routes */}
         <Route path="/doctor-dashboard" element={<Dashboard />} />
         <Route path="/doctor-profile" element={<Profile />} />
         <Route path="/doctor-medication" element={<MedicationManagement />} />
         <Route path="/doctor-appointsystem" element={<AppointmentSystem />} />
         <Route path="/doctor-patient-management" element={<PatientManagement />} />
-        <Route path="/patient-dashboard" element={<PatientDashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDasboard/>} />
-        <Route path="/admin-patient/:id" element={<PatientDetails/>} />
-        <Route path="/admin-doctor/:id" element={<DoctorDetails/>} />
-        <Route path="/caretaker-dashboard" element={<CaretakerDashboard />} />
-        <Route path="/admin-caretaker/:id" element={<CaretakerDetail/>} />
         <Route path="/video-call/:roomID" element={<VideoCall />} />
+
+        {/* Patient Routes */}
+        <Route path="/patient-dashboard" element={<PatientDashboard />} />
         <Route path="/patient-video-call/:roomID" element={<PatientVideoCall />} />
 
-        <Route path="/" element={<Login />} />
+        {/* Admin Routes */}
+        <Route path="/admin-dashboard" element={<AdminDasboard/>} />
+        
+        {/* Admin Details */}
+        <Route path="/admin-patient/:id" element={<PatientDetails/>} />
+        <Route path="/admin-doctor/:id" element={<DoctorDetails/>} />
+        <Route path="/admin-caretaker/:id" element={<CaretakerDetail/>} />
+
+        {/* Caretaker Routes */}
+        <Route path="/caretaker-dashboard" element={<CaretakerDashboard />} />
+
+        {/* --- MISSING ROUTES FIXED BELOW --- */}
+        
+        {/* Fix for: No routes matched location "/patient/PAT888" */}
+        {/* Allows DoctorDetails to view Patient Details */}
+        <Route path="/patient/:id" element={<PatientDetails />} />
+
+        {/* Fix for: No routes matched location "/assign-patient/..." */}
+        {/* Maps back to CaretakerDetail or you can replace with <AssignPatient /> if you have that component */}
+        <Route path="/assign-patient/:id" element={<CaretakerDetail />} />
+
       </Routes>
     </Router>
   );

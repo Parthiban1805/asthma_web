@@ -76,7 +76,20 @@ const Register = () => {
       alert("Registration failed: " + (err.response?.data?.message || "Server error"));
     }
   };
-
+const handlePhoneLookup = async () => {
+    if (phone.length >= 10 && userType === "patient") {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/api/patients/check-phone/${phone}`);
+        setPatientId(res.data.patientId);
+        if (res.data.exists) {
+          setName(res.data.name); // Auto-fill name if doctor added it
+          alert(`Welcome back ${res.data.name}! We found your ID: ${res.data.patientId}`);
+        }
+      } catch (err) {
+        console.error("Lookup error");
+      }
+    }
+  };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-50 to-teal-100">
       {/* Decorative background elements */}
@@ -150,17 +163,29 @@ const Register = () => {
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="555-123-4567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+    <input
+      type="tel"
+      value={phone}
+      onChange={(e) => setPhone(e.target.value)}
+      onBlur={handlePhoneLookup} // TRIGGERS LOOKUP
+      required
+      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+    />
+  </div>
+
+      {userType === "patient" && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Patient ID</label>
+          <input
+            type="text"
+            value={patientId}
+            readOnly
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+          />
+          <p className="text-xs text-blue-600">Generated automatically based on phone number</p>
+        </div>
+      )}
             
             <div className="space-y-2">
               <label htmlFor="userType" className="block text-sm font-medium text-gray-700">Role</label>

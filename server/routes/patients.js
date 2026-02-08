@@ -26,6 +26,28 @@ router.get('/patients', async (req, res) => {
     }
   });
   
+  router.get('/patients/check-phone/:phone', async (req, res) => {
+  try {
+    const { phone } = req.params;
+    // Check if a patient record was already created by a doctor
+    const existingPatient = await Patient.findOne({ phone: Number(phone) });
+
+    if (existingPatient) {
+      return res.json({ 
+        exists: true, 
+        patientId: existingPatient.patientId, 
+        name: existingPatient.name 
+      });
+    }
+
+    // If no record exists, generate a new unique random ID
+    const newGeneratedId = `PAT-${Math.floor(1000 + Math.random() * 9000)}`;
+    res.json({ exists: false, patientId: newGeneratedId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error checking phone" });
+  }
+});
   
   // Get patient by ID
 router.get('/patients/:id', async (req, res) => {
