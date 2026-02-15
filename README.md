@@ -21,12 +21,12 @@ The project follows a modern Client-Server architecture with a specialized integ
 
 ```mermaid
 graph TD
-    Client[React Frontend] -->|REST API| Server[Node.js/Express Backend]
-    Server -->|Mongoose| DB[(MongoDB Database)]
-    Server -->|Spawn Process| ML[Python ML Engine]
-    ML -->|Load| Model[Random Forest Model (.pkl)]
-    Server -->|SMTP| Email[Email Service (Nodemailer)]
-    Server -->|Token Generation| Video[Agora Video SDK]
+    Client["React Frontend"] -->|REST API| Server["Node.js/Express Backend"]
+    Server -->|Mongoose| DB[("MongoDB Database")]
+    Server -->|Spawn Process| ML["Python ML Engine"]
+    ML -->|Load| Model["Random Forest Model (.pkl)"]
+    Server -->|SMTP| Email["Email Service (Nodemailer)"]
+    Server -->|Token Generation| Video["Agora Video SDK"]
     
     subgraph "Frontend Layer"
         Client
